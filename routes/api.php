@@ -60,7 +60,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Admin routes
-    Route::middleware('role:Admin')->group(function () {
+    Route::middleware('role:admin')->group(function () {
         Route::get('admin/dashboard', [AdminController::class, 'dashboard']);
     });
 });

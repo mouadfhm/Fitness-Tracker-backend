@@ -27,8 +27,8 @@ class ProfileController extends Controller
         ]);
 
         $user->update($validatedData);
+        $user->syncRoles([]); // Remove existing roles first (optional)
         $user->assignRole('admin');
-
         return response()->json([
             'message' => 'Profile updated successfully.',
             'user'    => $user,
