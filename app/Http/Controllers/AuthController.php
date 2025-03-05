@@ -12,48 +12,54 @@ class AuthController extends Controller
     // Register a new user and generate an auth token
     public function register(Request $request)
     {
-        $validatedData = $request->validate([
-            'name'          => 'required|string|max:255',
-            'email'         => 'required|email|unique:users',
-            'password'      => 'required|string|min:6|confirmed',
-            'age'           => 'nullable|integer',
-            'weight'        => 'nullable|numeric',
-            'height'        => 'nullable|numeric',
-            'gender'        => 'nullable|in:male,female,other',
-            'activity_level'=> 'nullable|string',
-            'fitness_goal'  => 'nullable|in:weight_loss,muscle_gain,maintenance',
-        ]);
+        try {
+            $validatedData = $request->validate([
+                'name'          => 'required|string|max:255',
+                'email'         => 'required|email|unique:users',
+                'password'      => 'required|string|min:6|confirmed',
+                'age'           => 'nullable|integer',
+                'weight'        => 'nullable|numeric',
+                'height'        => 'nullable|numeric',
+                'gender'        => 'nullable|in:male,female,other',
+                'activity_level' => 'nullable|string',
+                'fitness_goal'  => 'nullable|in:weight_loss,muscle_gain,maintenance',
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json(['errors' => $e->errors()], 422);
+        }
+        try {
+            $user = User::create([
+                'name'          => $validatedData['name'],
+                'email'         => $validatedData['email'],
+                'password'      => Hash::make($validatedData['password']),
+                'age'           => $validatedData['age'] ?? null,
+                'weight'        => $validatedData['weight'] ?? null,
+                'height'        => $validatedData['height'] ?? null,
+                'gender'        => $validatedData['gender'] ?? null,
+                'activity_level' => $validatedData['activity_level'] ?? null,
+                'fitness_goal'  => $validatedData['fitness_goal'] ?? null,
+            ]);
+            // Optionally assign a default role (e.g., Regular User)
+            $user->assignRole('user');
 
-        $user = User::create([
-            'name'          => $validatedData['name'],
-            'email'         => $validatedData['email'],
-            'password'      => Hash::make($validatedData['password']),
-            'age'           => $validatedData['age'] ?? null,
-            'weight'        => $validatedData['weight'] ?? null,
-            'height'        => $validatedData['height'] ?? null,
-            'gender'        => $validatedData['gender'] ?? null,
-            'activity_level'=> $validatedData['activity_level'] ?? null,
-            'fitness_goal'  => $validatedData['fitness_goal'] ?? null,
-        ]);
+            $token = $user->createToken('auth_token')->plainTextToken;
 
-        // Optionally assign a default role (e.g., Regular User)
-        $user->assignRole('admin');
-
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'access_token' => $token,
-            'token_type'   => 'Bearer',
-            'user'         => $user,
-        ], 201);
+            return response()->json([
+                'access_token' => $token,
+                'token_type'   => 'Bearer',
+                'user'         => $user,
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
     }
 
     // Login an existing user and generate an auth token
     public function login(Request $request)
     {
         $request->validate([
-           'email'    => 'required|email',
-           'password' => 'required',
+            'email'    => 'required|email',
+            'password' => 'required',
         ]);
 
         $user = User::where('email', $request->email)->first();

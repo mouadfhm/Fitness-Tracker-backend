@@ -8,10 +8,10 @@ use Illuminate\Http\Request;
 class FoodController extends Controller
 {
     // List all food items
-    public function index( Request $request)
+    public function index(Request $request)
     {
         $query = request('query');
-        if($request->has('name')) {
+        if ($request->has('name')) {
             $foods = Food::where('name', 'like', '%' . $request->name . '%')->get();
             return response()->json($foods);
         } else {
@@ -30,7 +30,13 @@ class FoodController extends Controller
             'carbs'    => 'required|numeric',
             'fats'     => 'required|numeric',
         ]);
-
+        $exists = Food::where('name', $validatedData['name'])->value('id');
+        if (isset($exists)) {
+            return response()->json(
+                ['message' => 'Food already exists.'],
+                400
+            );
+        }
         $food = Food::create($validatedData);
 
         return response()->json([

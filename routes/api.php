@@ -31,16 +31,18 @@ Route::middleware('auth:sanctum')->group(function () {
     // Meal logging & food search
     Route::group(['prefix' => 'meals'], function () {
         Route::apiResource('/', MealController::class);
+        Route::get('/macros', [MealController::class, 'totalMacros']);
         Route::post('/add', [MealController::class, 'store']);
         Route::put('/{id}', [MealController::class, 'update']);
-        Route::delete('/{id}', [MealController::class, 'destroy']);
         Route::get('/search', [MealController::class, 'index']);
         Route::get('/{id}', [MealController::class, 'show']);
+        Route::delete('/{id}', [MealController::class, 'destroy']);
     });
 
     // Goal & progress tracking
     Route::group(['prefix' => 'goals'], function () {
-        Route::post('/add', [GoalController::class, 'store']);
+        Route::put('/', [GoalController::class, 'update']);
+        Route::get('/search', [GoalController::class, 'index']);
     });
 
     // Progress tracking
