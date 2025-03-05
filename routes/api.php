@@ -58,6 +58,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{id}', [WorkoutController::class, 'update']);
         Route::delete('/{id}', [WorkoutController::class, 'destroy']);
         Route::get('/search', [WorkoutController::class, 'index']);
+        Route::get('/exercises', [WorkoutController::class, 'exercises']);
         Route::get('/{id}', [WorkoutController::class, 'show']);
     });
 
