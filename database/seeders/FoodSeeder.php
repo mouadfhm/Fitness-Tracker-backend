@@ -9,48 +9,57 @@ class FoodSeeder extends Seeder
 {
     public function run()
     {
-        $filePath = [storage_path('app/public/FOOD-DATA-GROUP1.csv'), storage_path('app/public/FOOD-DATA-GROUP2.csv'), storage_path('app/public/FOOD-DATA-GROUP3.csv'), storage_path('app/public/FOOD-DATA-GROUP4.csv'), storage_path('app/public/FOOD-DATA-GROUP5.csv')]; // Path to CSV
-        foreach ($filePath as $filePath) {
-            if (!file_exists($filePath)) {
-                $this->command->error("CSV file not found at $filePath");
-                return;
+        $filePath = storage_path('app/public/csv_result.csv'); // Path to CSV
+        $lines = file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        
+        // Remove the header row (first line) since your CSV already has column names
+        $header = array_shift($lines);
+        
+        foreach ($lines as $line) {
+            $line = trim($line);
+            
+            // Parse the CSV line
+            $row = str_getcsv($line, ',');
+            
+            // Clean any surrounding quotes from each field
+            $row = array_map(function ($value) {
+                return trim($value, " '");
+            }, $row);
+            
+            // Convert "t" (trace amounts) to null if needed
+            $fields = array_map(function ($field) {
+                return ($field === 't') ? null : $field;
+            }, $row);
+        
+            // Check for duplicate food entries based on the 'name' field (index 1)
+            if (Food::where('name', $fields[1])->exists()) {
+                $this->command->info("Skipping duplicate food: " . $fields[1]);
+                continue;  // Skip the duplicate food
             }
-
-            $file = fopen($filePath, "r");
-            $isFirstRow = true;
-
-            while (($row = fgetcsv($file, 1000, ",")) !== FALSE) {
-                if ($isFirstRow) {
-                    $isFirstRow = false; // Skip CSV header
-                    continue;
-                }
-
-                // Check if the food already exists by its name (or other unique field)
-                if (Food::where('name', $row[2])->exists()) {
-                    $this->command->info("Skipping duplicate food: " . $row[2]);
-                    continue;  // Skip the duplicate food
-                }
-
-                // Insert the food if not a duplicate
+        
+            // Make sure required fields are available:
+            // In your CSV:
+            // index 1: name
+            // index 3: calories
+            // index 4: total_fat
+            // index 5: carbohydrate
+            // index 6: protein
+            if (isset($fields[1], $fields[3], $fields[4], $fields[5], $fields[6])) {
                 Food::create([
-                    'name' => $row[2],
-                    'calories' => $row[3],
-                    'protein' => $row[10],
-                    'carbs' => $row[8],
-                    'fats' => $row[4]
+                    'name'     => $fields[1],
+                    'calories' => (float) $fields[3],
+                    // Remove 'g' from nutrient values and convert to float
+                    'fats'     => (float) str_replace('g', '', $fields[4]),
+                    'carbs'    => (float) str_replace('g', '', $fields[5]),
+                    'protein'  => (float) str_replace('g', '', $fields[6])
                 ]);
-                // Food::create([
-                //     'name' => $row[2],
-                //     'calories' => $row[4],
-                //     'protein' => $row[5],
-                //     'carbs' => $row[8],
-                //     'fats' => (float) $row[44] + (float) $row[45] + (float) $row[46]
-                // ]);
-    
+            } else {
+                $this->command->warn("Skipping row due to missing data: " . implode(',', $fields));
             }
-
-            fclose($file);
-            $this->command->info('Foods table seeded successfully from CSV!');
         }
+        
+        $this->command->info('Foods table seeded successfully from CSV!');
+        }
+
     }
-}
+

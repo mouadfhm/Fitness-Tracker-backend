@@ -10,9 +10,16 @@ use Illuminate\Support\Facades\Auth;
 class WorkoutController extends Controller
 {
     // List all workouts for the authenticated user
-    public function index()
+    public function index( Request $request)
     {
-        $workouts = Workout::where('user_id', Auth::id())->get();
+        $query = Workout::query();
+        if($request->has('activity_type')) {
+            $query->where('activity_type', $request->activity_type);
+        }
+        if($request->has('workout_date')) {
+            $query->where('workout_date', $request->workout_date);
+        }
+        $workouts = $query->where('user_id', Auth::id())->get();
         return response()->json($workouts);
     }
     public function exercises(Request $request)
@@ -42,7 +49,16 @@ class WorkoutController extends Controller
             'workout' => $workout,
         ], 201);
     }
-
+    public function caloriesBurned(Request $request)
+    {
+        $query=Workout::query();
+        if($request->has('workout_date')) {
+            $query->where('workout_date', $request->workout_date);
+        }
+        $workouts = $query->where('user_id', Auth::id())->get();
+        $caloriesBurned = $workouts->sum('calories_burned');
+        return response()->json($caloriesBurned);
+    }
     // Show details for a specific workout
     public function show($id)
     {
