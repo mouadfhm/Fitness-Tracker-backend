@@ -14,7 +14,8 @@ class Food extends Model
         'calories', 
         'protein', 
         'carbs', 
-        'fats'
+        'fats',
+        'is_favorite',
     ];
 
     // A food can belong to many meals.

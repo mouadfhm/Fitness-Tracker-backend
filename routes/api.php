@@ -23,6 +23,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('/', FoodController::class);
         Route::post('/add', [FoodController::class, 'store']);
         Route::put('/{id}', [FoodController::class, 'update']);
+        Route::post('/favorite/{id}', [FoodController::class, 'addFavorite']);
+        Route::post('/remove-favorite/{id}', [FoodController::class, 'removeFavorite']);
         Route::delete('/{id}', [FoodController::class, 'destroy']);
         Route::get('/search', [FoodController::class, 'index']);
         Route::get('/{id}', [FoodController::class, 'show']);

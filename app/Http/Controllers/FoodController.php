@@ -10,16 +10,41 @@ class FoodController extends Controller
     // List all food items
     public function index(Request $request)
     {
-        $query = request('query');
         if ($request->has('name')) {
-            $foods = Food::where('name', 'like', '%' . $request->name . '%')->get();
+            $foods = Food::where('name', 'like', '%' . $request->name . '%')
+                ->withCount('meals')
+                ->orderByDesc('meals_count')
+                ->orderByDesc('is_favorite')
+                ->get();
             return response()->json($foods);
         } else {
-            $foods = Food::all();
+            $foods = Food::orderByDesc('is_favorite')->withCount('meals')
+                ->orderByDesc('meals_count')
+                ->get();
             return response()->json($foods);
         }
     }
-
+// add fivorite food
+    public function addFavorite(Request $request, $id)
+    {
+        $food = Food::findOrFail($id);
+        $food->is_favorite = true;
+        $food->save();
+        return response()->json([
+            'message' => 'Favorite food added successfully.',
+            'food'    => $food,
+        ]);
+    }
+    public function removeFavorite(Request $request, $id)
+    {
+        $food = Food::findOrFail($id);
+        $food->is_favorite = false;
+        $food->save();
+        return response()->json([
+            'message' => 'Favorite food removed successfully.',
+            'food'    => $food,
+        ]);
+    }
     // Create a new food item
     public function store(Request $request)
     {
