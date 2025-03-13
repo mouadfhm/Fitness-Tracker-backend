@@ -2,47 +2,73 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FavoriteFood;
 use App\Models\Food;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class FoodController extends Controller
 {
-    // List all food items
     public function index(Request $request)
     {
-        if ($request->has('name')) {
-            $foods = Food::where('name', 'like', '%' . $request->name . '%')
-                ->withCount('meals')
-                ->orderByDesc('meals_count')
-                ->orderByDesc('is_favorite')
-                ->get();
-            return response()->json($foods);
-        } else {
-            $foods = Food::orderByDesc('is_favorite')->withCount('meals')
-                ->orderByDesc('meals_count')
-                ->get();
-            return response()->json($foods);
+        $userId = Auth::id();
+        $query = Food::query();
+
+        if ($request->filled('name')) {
+            $query->where('name', 'like', "%{$request->name}%");
         }
+
+        $foods = $query
+            ->select('foods.id', 'foods.name', 'foods.calories', 'foods.protein', 'foods.carbs', 'foods.fats')
+            ->withCount('meals')
+            ->leftJoin('favorite_foods', function ($join) use ($userId) {
+                $join->on('foods.id', '=', 'favorite_foods.food_id')
+                    ->where('favorite_foods.user_id', '=', $userId);
+            })
+            ->addSelect(DB::raw('COALESCE(favorite_foods.is_favorite, 0) as is_favorite'))
+            ->orderByDesc('is_favorite')
+            ->orderByDesc('meals_count')
+            ->get();
+
+        return response()->json($foods);
     }
-// add fivorite food
-    public function addFavorite(Request $request, $id)
+    public function addFavorite(Request $request, int $foodId)
     {
-        $food = Food::findOrFail($id);
-        $food->is_favorite = true;
-        $food->save();
+        $user = Auth::user();
+        $food = Food::findOrFail($foodId);
+
+        $favoriteFood = FavoriteFood::firstOrCreate(
+            [
+                'food_id' => $food->id,
+                'user_id' => $user->id,
+            ],
+            [
+                'is_favorite' => true,
+            ]
+        );
+
+        $favoriteFood->update(['is_favorite' => true]);
+
         return response()->json([
             'message' => 'Favorite food added successfully.',
-            'food'    => $food,
+            'food' => $food,
+            'favorite_food' => $favoriteFood,
         ]);
     }
-    public function removeFavorite(Request $request, $id)
+    public function removeFavorite(Request $request, int $foodId)
     {
-        $food = Food::findOrFail($id);
-        $food->is_favorite = false;
-        $food->save();
+        $user = Auth::user();
+        $food = Food::findOrFail($foodId);
+
+        $favoriteFood = FavoriteFood::where('food_id', $food->id)
+            ->where('user_id', $user->id)
+            ->update(['is_favorite' => false]);
+
         return response()->json([
             'message' => 'Favorite food removed successfully.',
-            'food'    => $food,
+            'food' => $food,
+            'favorite_food' => $favoriteFood,
         ]);
     }
     // Create a new food item

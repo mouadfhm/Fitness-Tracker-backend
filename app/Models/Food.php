@@ -23,4 +23,8 @@ class Food extends Model
     {
         return $this->belongsToMany(Meal::class)->withPivot('quantity');
     }
+    public function favoriteFoods()
+    {
+        return $this->hasMany(FavoriteFood::class);
+    }
 }
