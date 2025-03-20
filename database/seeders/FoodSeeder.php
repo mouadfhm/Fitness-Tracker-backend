@@ -9,7 +9,7 @@ class FoodSeeder extends Seeder
 {
     public function run()
     {
-        $filePath = storage_path('database/data/csv_result.csv'); // Path to CSV
+        $filePath = database_path('data/csv_result.csv'); // Path to CSV
         $lines = file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         
         // Remove the header row (first line) since your CSV already has column names
