@@ -14,16 +14,6 @@ class UserSeeder extends Seeder
      */
     public function run()
     {
-        User::create([
-            'name' => 'John Doe',
-            'email' => 'john@example.com',
-            'password' => Hash::make('password'),
-            'age' => 30,
-            'weight' => 75,
-            'height' => 175,
-            'gender' => 'male',
-            'activity_level' => 'moderate',
-            'fitness_goal' => 'muscle_gain'
-        ]);
+        
     }
 }
