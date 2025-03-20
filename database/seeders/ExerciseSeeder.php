@@ -14,7 +14,7 @@ class ExerciseSeeder extends Seeder
     public function run(): void
     {
         //
-        $filePath = [storage_path('app/public/exercise_dataset.csv')]; // Path to CSV
+        $filePath = [database_path('data/exercise_dataset.csv')]; // Path to CSV
         foreach ($filePath as $filePath) {
             if (!file_exists($filePath)) {
                 $this->command->error("CSV file not found at $filePath");
