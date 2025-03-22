@@ -55,12 +55,12 @@ class FoodSeeder extends Seeder
                             'name'     => $fields[2],
                             'calories' => (float) $fields[4],
                             // Remove 'g' from nutrient values and convert to float
-                            'fats'     => (float) str_replace('g', '', $fields[45] + $fields[46] + $fields[47]),
-                            'carbs'    => (float) str_replace('g', '', $fields[8]),
-                            'protein'  => (float) str_replace('g', '', $fields[5])
+                            'fats'     => (float) $fields[45] + (float) $fields[46] + (float) $fields[47],
+                            'carbs'    => (float) $fields[8],
+                            'protein'  => (float) $fields[5]
                         ]);
                     } else {
-                        $this->command->warn("Skipping row due to missing data: " . implode(',', $fields));
+                        $this->command->warn("Skipping row due to missing data: " . implode(',', $fields[2]));
                     }
                 }
             }elseif($filePath == database_path('data/csv_result.csv')) {
