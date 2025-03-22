@@ -13,6 +13,7 @@ class FoodController extends Controller
     public function index(Request $request)
     {
         $userId = Auth::id();
+
         $query = Food::query();
 
         if ($request->filled('name')) {
@@ -20,19 +21,29 @@ class FoodController extends Controller
         }
 
         $foods = $query
-            ->select('foods.id', 'foods.name', 'foods.calories', 'foods.protein', 'foods.carbs', 'foods.fats')
-            ->withCount('meals')
-            ->leftJoin('favorite_foods', function ($join) use ($userId) {
-                $join->on('foods.id', '=', 'favorite_foods.food_id')
-                    ->where('favorite_foods.user_id', '=', $userId);
-            })
-            ->addSelect(DB::raw('COALESCE(favorite_foods.is_favorite, 0) as is_favorite'))
+            ->select(
+                'foods.id',
+                'foods.name',
+                'foods.calories',
+                'foods.protein',
+                'foods.carbs',
+                'foods.fats'
+            )
+            ->withCount([
+                'meals as meals_count' => function ($query) use ($userId) {
+                    $query->where('user_id', $userId);
+                }
+            ])
+            ->addSelect([
+                DB::raw('(SELECT COUNT(*) FROM favorite_foods WHERE favorite_foods.food_id = foods.id AND favorite_foods.user_id = ' . $userId . ') AS is_favorite')
+            ])
             ->orderByDesc('is_favorite')
             ->orderByDesc('meals_count')
             ->get();
 
         return response()->json($foods);
     }
+    
     public function addFavorite(Request $request, int $foodId)
     {
         $user = Auth::user();
