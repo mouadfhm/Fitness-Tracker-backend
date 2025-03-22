@@ -10,7 +10,7 @@ class FoodSeeder extends Seeder
     public function run()
     {
         $filePaths = [
-            database_path('data/csv_result.csv'),
+            // database_path('data/csv_result.csv'),
             database_path('data/ABBREV.csv'),
             // Add more file paths as needed
         ];
