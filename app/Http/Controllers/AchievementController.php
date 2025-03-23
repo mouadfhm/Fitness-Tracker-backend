@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\UserAchievement;
+use App\Models\Achievement;
 use Illuminate\Support\Facades\Auth;
 
 class AchievementController extends Controller
@@ -16,4 +17,11 @@ public function getUserAchievements()
 
     return response()->json($achievements);
 }
+public function getAchievements()
+{
+    $achievements = Achievement::get();
+
+    return response()->json($achievements);
+}
+
 }

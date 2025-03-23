@@ -10,6 +10,7 @@ use App\Http\Controllers\ProgressController;
 use App\Http\Controllers\WorkoutController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AchievementController;
+use App\Http\Controllers\NotificationController ;
 
 
 Route::post('register', [AuthController::class, 'register']);
@@ -67,7 +68,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}', [WorkoutController::class, 'show']);
     });
 
-    Route::get('/achievements', [AchievementController::class, 'getUserAchievements'])->middleware('auth:sanctum');
+    Route::get('/user/achievements', [AchievementController::class, 'getUserAchievements'])->middleware('auth:sanctum');
+    Route::get('/achievements', [AchievementController::class, 'getAchievements']);
+    
+    Route::post('/save-device-token', [NotificationController::class, 'saveDeviceToken'])->middleware('auth:sanctum');
 
     // Admin routes
     Route::middleware('role:admin')->group(function () {

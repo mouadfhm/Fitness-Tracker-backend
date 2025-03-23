@@ -1,9 +1,10 @@
-<?php   
+<?php
+
 namespace App\Services;
 
 use App\Models\Achievement;
 use App\Models\UserAchievement;
-
+use App\Services\NotificationService;
 class AchievementService
 {
     public function checkAndUnlock($user, $type, $progress)
@@ -25,6 +26,13 @@ class AchievementService
                 'achievement_id' => $achievement->id,
                 'unlocked_at' => now(),
             ]);
+            // Send notification
+            $notificationService = new NotificationService();
+            $notificationService->sendNotification(
+                $user->id,
+                "🎉 Achievement Unlocked!",
+                "You've unlocked: " . $achievement->name
+            );
         }
     }
 }
