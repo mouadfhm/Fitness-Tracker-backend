@@ -5,7 +5,7 @@ use Illuminate\Console\Command;
 use App\Services\NotificationService;
 use App\Models\User;
 
-class SendDailyReminder extends Command
+class SendDailyMealReminder extends Command
 {
     protected $signature = 'send:daily-meal-reminder';
     protected $description = 'Send daily meal logging reminders to users';
