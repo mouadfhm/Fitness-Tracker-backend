@@ -8,6 +8,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
+use App\Services\AchievementService;
 
 class MealController extends Controller
 {
@@ -75,11 +76,41 @@ class MealController extends Controller
         try {
             // Attach foods with pivot data (quantity)
             foreach ($validatedData['foods'] as $foodItem) {
-                if(!isset($foodItem['food_id'])){
-                    $foodItem['food_id']=Food::where('name',$foodItem['name'])->value('id');
+                if (!isset($foodItem['food_id'])) {
+                    $foodItem['food_id'] = Food::where('name', $foodItem['name'])->value('id');
                 }
                 $meal->foods()->attach($foodItem['food_id'], ['quantity' => $foodItem['quantity']]);
             }
+        } catch (Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
+        try {
+            //count how many meals the user logged every days in row
+            $achievementService = new AchievementService();
+            $achievementService->checkAndUnlock(Auth::user(), 'meals', 1);
+            $currentDate = now()->toDateString();
+            $consecutiveDays = 0;
+            for ($i = 0; $i <= 30; $i++) { // Check up to 30 days back
+                $date = now()->subDays($i)->toDateString();
+                $hasMeal = Auth::user()->meals()->whereDate('date', $date)->exists();
+
+                if (!$hasMeal) {
+                    break;
+                }
+                $consecutiveDays++;
+            }
+            $achievementService->checkAndUnlock(Auth::user(), 'streak', $consecutiveDays);
+            // count how many calories the user logged in this days
+            $caloriesToday = Auth::user()->meals()
+                ->whereDate('date', now()->toDateString())
+                ->with('foods')
+                ->get()
+                ->sum(function ($meal) {
+                    return $meal->foods->sum(function ($food) {
+                        return $food->calories * $food->pivot->quantity / 100;
+                    });
+                });
+            $achievementService->checkAndUnlock(Auth::user(), 'calories', $caloriesToday);
         } catch (Exception $e) {
             return response()->json(['message' => $e->getMessage()], 400);
         }

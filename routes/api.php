@@ -9,6 +9,8 @@ use App\Http\Controllers\GoalController;
 use App\Http\Controllers\ProgressController;
 use App\Http\Controllers\WorkoutController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AchievementController;
+
 
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
@@ -64,6 +66,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/calories-burned', [WorkoutController::class, 'caloriesBurned']);
         Route::get('/{id}', [WorkoutController::class, 'show']);
     });
+
+    Route::get('/achievements', [AchievementController::class, 'getUserAchievements'])->middleware('auth:sanctum');
 
     // Admin routes
     Route::middleware('role:admin')->group(function () {
