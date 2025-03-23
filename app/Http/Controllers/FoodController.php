@@ -43,7 +43,7 @@ class FoodController extends Controller
 
         return response()->json($foods);
     }
-    
+
     public function addFavorite(Request $request, int $foodId)
     {
         $user = Auth::user();
@@ -98,8 +98,9 @@ class FoodController extends Controller
                 ['message' => 'Food already exists.'],
                 400
             );
+        } else {
+            $food = Food::create($validatedData);
         }
-        $food = Food::create($validatedData);
 
         return response()->json([
             'message' => 'Food item created successfully.',
