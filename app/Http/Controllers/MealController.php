@@ -133,33 +133,35 @@ class MealController extends Controller
     // Update meal details and food items
     public function update(Request $request, $id)
     {
-        $meal = Meal::where('user_id', Auth::id())->findOrFail($id);
-        $validatedData = $request->validate([
-            'meal_time' => 'sometimes|date',
-            'date'      => 'sometimes|date',
-            'foods'     => 'sometimes|array',
-            'foods.*.food_id'   => 'required_with:foods|exists:foods,id',
-            'foods.*.quantity'  => 'required_with:foods|numeric',
-        ]);
+        try {
+            $meal = Meal::where('user_id', Auth::id())->findOrFail($id);
 
-        if (isset($validatedData['meal_time'])) {
-            $meal->meal_time = $validatedData['meal_time'];
-            $meal->save();
-        }
+            $validated = $request->validate([
+                'meal_time' => 'sometimes|string',
+                'date'      => 'sometimes|date',
+                'foods'     => 'sometimes|array',
+                'foods.*.food_id'   => 'required_with:foods|exists:foods,id',
+                'foods.*.quantity'  => 'required_with:foods|numeric',
+            ]);
 
-        if (isset($validatedData['foods'])) {
-            // Prepare data for pivot table sync: [food_id => ['quantity' => value]]
-            $foodData = [];
-            foreach ($validatedData['foods'] as $foodItem) {
-                $foodData[$foodItem['food_id']] = ['quantity' => $foodItem['quantity']];
+            if (!empty($validated['meal_time'])) {
+                $meal->update(['meal_time' => $validated['meal_time']]);
             }
-            $meal->foods()->sync($foodData);
-        }
 
-        return response()->json([
-            'message' => 'Meal updated successfully.',
-            'meal'    => $meal->load('foods'),
-        ]);
+            if (!empty($validated['foods'])) {
+                $foodItems = collect($validated['foods'])->mapWithKeys(function ($item) {
+                    return [$item['food_id'] => ['quantity' => $item['quantity']]];
+                });
+                $meal->foods()->sync($foodItems);
+            }
+
+            return response()->json([
+                'message' => 'Meal updated successfully.',
+                'meal'    => $meal->load('foods'),
+            ]);
+        } catch (Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
     }
 
     // Delete a meal

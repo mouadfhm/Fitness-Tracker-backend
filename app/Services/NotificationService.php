@@ -1,14 +1,14 @@
-namespace App\Services;
 <?php
+namespace App\Services;
 use Kreait\Firebase\Messaging\CloudMessage;
 use Kreait\Firebase\Messaging\Notification;
-use App\Models\UserDevice;
+use App\Models\UserDevices;
 
 class NotificationService
 {
     public function sendNotification($userId, $title, $body)
     {
-        $device = UserDevice::where('user_id', $userId)->first();
+        $device = UserDevices::where('user_id', $userId)->first();
         if (!$device) return;
 
         $messaging = app('firebase');

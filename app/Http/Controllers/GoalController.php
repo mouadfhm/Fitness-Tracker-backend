@@ -22,7 +22,7 @@ class GoalController extends Controller
             return response()->json(['errors' => $e->errors()], 422);
         }
         try {
-            $user = Auth::user();
+            $user = \App\Models\User::find(Auth::id());
             $user->fitness_goal = $validatedData['fitness_goal'];
             $user->save();
 
