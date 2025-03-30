@@ -10,7 +10,15 @@ use App\Http\Controllers\ProgressController;
 use App\Http\Controllers\WorkoutController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AchievementController;
-use App\Http\Controllers\NotificationController ;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\RecommendationController;
+use App\Http\Controllers\CustomWorkoutController;
+use App\Http\Controllers\GymExerciseController;
+use App\Http\Controllers\ScheduledWorkoutController;
+use App\Http\Controllers\WorkoutLogController;
+use App\Http\Controllers\WeeklyCyclePlanController;
+
+
 
 
 Route::post('register', [AuthController::class, 'register']);
@@ -67,10 +75,40 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/calories-burned', [WorkoutController::class, 'caloriesBurned']);
         Route::get('/{id}', [WorkoutController::class, 'show']);
     });
+    // Optional: Workout tracking
+    Route::group(['prefix' => 'v2/workouts'], function () {
+        //gym exercises
+        Route::get('/exercises', [GymExerciseController::class, 'index']);
+        Route::get('/exercises/search', [GymExerciseController::class, 'search']);
+        // Workouts
+        Route::get('/workouts', [WorkoutController::class, 'index']);
+        Route::get('/workouts/{id}', [WorkoutController::class, 'show']);
+
+        // Custom workouts
+        Route::get('/custom-workouts', [CustomWorkoutController::class, 'index']);
+        Route::get('/custom-workouts/{id}', [CustomWorkoutController::class, 'show']);
+        Route::post('/custom-workouts', [CustomWorkoutController::class, 'store']);
+        Route::put('/custom-workouts/{id}', [CustomWorkoutController::class, 'update']);
+
+        // Logging workouts
+        Route::get('/workout-logs', [WorkoutLogController::class, 'index']);
+        Route::post('/workout-logs', [WorkoutLogController::class, 'store']);
+
+        // Scheduling workouts
+        Route::get('/scheduled-workouts', [ScheduledWorkoutController::class, 'index']);
+        Route::post('/scheduled-workouts', [ScheduledWorkoutController::class, 'store']);
+
+        // AI-based recommendations
+        Route::get('/recommendations', [RecommendationController::class, 'index']);
+        // weekly workouts
+        Route::get('/weekly-cycle-plans', [WeeklyCyclePlanController::class, 'index']);
+        Route::post('/weekly-cycle-plans', [WeeklyCyclePlanController::class, 'store']);
+        Route::put('/weekly-cycle-plans/{id}', [WeeklyCyclePlanController::class, 'update']);
+    });
 
     Route::get('/user/achievements', [AchievementController::class, 'getUserAchievements'])->middleware('auth:sanctum');
     Route::get('/achievements', [AchievementController::class, 'getAchievements']);
-    
+
     Route::post('/save-device-token', [NotificationController::class, 'saveDeviceToken'])->middleware('auth:sanctum');
 
     // Admin routes

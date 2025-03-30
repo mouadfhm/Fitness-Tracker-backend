@@ -11,7 +11,9 @@ class Exercise extends Model
     protected $fillable = [
         'name',
         'description',
+        'category',
         'duration',
+        'defaultReps',
         'caloriesPerKg',
     ];
 }
