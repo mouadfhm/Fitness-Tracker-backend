@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
             // ExerciseSeeder::class,
             // FoodSeeder::class,
             // AchievementSeeder::class,
-            GymExerciseSeeder::class
+            // GymExerciseSeeder::class
         ]);
     }
 }

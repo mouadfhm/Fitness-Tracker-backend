@@ -97,6 +97,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Scheduling workouts
         Route::get('/scheduled-workouts', [ScheduledWorkoutController::class, 'index']);
         Route::post('/scheduled-workouts', [ScheduledWorkoutController::class, 'store']);
+        Route::delete('/scheduled-workouts/{id}', [ScheduledWorkoutController::class, 'delete']);
 
         // AI-based recommendations
         Route::get('/recommendations', [RecommendationController::class, 'index']);

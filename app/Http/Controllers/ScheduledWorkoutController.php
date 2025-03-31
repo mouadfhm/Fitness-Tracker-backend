@@ -42,7 +42,7 @@ class ScheduledWorkoutController extends Controller
 
         return response()->json($schedule);
     }
-    
+
     public function delete($id)
     {
         $schedule = ScheduledWorkout::where('id', $id)
