@@ -18,11 +18,16 @@ class MealController extends Controller
         $query = Meal::query();
         if ($request->has('date')) {
             $query->whereDate('date', $request->date);
+        } else {
+            $query->whereDate('date', '>=', now()->subDays(30));
         }
         if ($request->has('meal_time')) {
             $query->where('meal_time', $request->meal_time);
         }
-        $meals = $query->with('foods')->where('user_id', Auth::id())->get();
+        $meals = $query->with('foods')
+            ->where('user_id', Auth::id())
+            ->orderBy('date', 'desc')
+            ->get();
         return response()->json($meals);
     }
     // meals total macros

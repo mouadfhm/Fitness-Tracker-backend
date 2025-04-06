@@ -13,7 +13,8 @@ class ProgressController extends Controller
     public function index()
     {
         $progress = Progress::where('user_id', Auth::id())
-            ->orderBy('date', 'asc')
+            ->orderBy('date', 'desc')
+            ->limit(10)
             ->get();
 
         return response()->json($progress);
