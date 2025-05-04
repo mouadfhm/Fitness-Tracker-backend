@@ -14,7 +14,11 @@ class FoodController extends Controller
     {
         $userId = Auth::id();
 
-        $query = Food::query();
+        $query = Food::query()
+            ->where(function ($query) use ($userId) {
+                $query->where('added_by', $userId)
+                    ->orWhereNull('added_by');
+            });
 
         if ($request->filled('name')) {
             $query->where('name', 'like', "%{$request->name}%");
@@ -27,7 +31,8 @@ class FoodController extends Controller
                 'foods.calories',
                 'foods.protein',
                 'foods.carbs',
-                'foods.fats'
+                'foods.fats',
+                'foods.added_by',
             )
             ->withCount([
                 'meals as meals_count' => function ($query) use ($userId) {
@@ -35,7 +40,7 @@ class FoodController extends Controller
                 }
             ])
             ->addSelect([
-                DB::raw('(SELECT COUNT(*) FROM favorite_foods WHERE favorite_foods.food_id = foods.id AND favorite_foods.user_id = ' . $userId . ') AS is_favorite')
+                DB::raw('(SELECT COUNT(*) FROM favorite_foods WHERE favorite_foods.food_id = foods.id AND favorite_foods.user_id = ' . $userId . ') AS is_favorite ')
             ])
             ->orderByDesc('is_favorite')
             ->orderByDesc('meals_count')
@@ -92,13 +97,17 @@ class FoodController extends Controller
             'carbs'    => 'required|numeric',
             'fats'     => 'required|numeric',
         ]);
+
         $exists = Food::where('name', $validatedData['name'])->value('id');
+        
         if (isset($exists)) {
             return response()->json(
                 ['message' => 'Food already exists.'],
                 400
             );
         } else {
+            $validatedData['added_by'] = Auth::id();
+            // dd($validatedData);
             $food = Food::create($validatedData);
         }
 

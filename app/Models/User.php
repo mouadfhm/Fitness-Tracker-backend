@@ -50,4 +50,8 @@ class User extends Authenticatable
     {
         return $this->hasMany(Workout::class);
     }
+    public function foods()
+    {
+        return $this->hasMany(Food::class, 'added_by');
+    }
 }

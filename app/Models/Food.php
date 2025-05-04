@@ -16,6 +16,7 @@ class Food extends Model
         'carbs', 
         'fats',
         'is_favorite',
+        'added_by',
     ];
 
     // A food can belong to many meals.
@@ -26,5 +27,9 @@ class Food extends Model
     public function favoriteFoods()
     {
         return $this->hasMany(FavoriteFood::class);
+    }
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'added_by');
     }
 }

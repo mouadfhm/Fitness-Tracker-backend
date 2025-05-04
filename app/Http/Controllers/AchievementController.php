@@ -19,7 +19,7 @@ public function getUserAchievements()
 }
 public function getAchievements()
 {
-    $achievements = Achievement::get();
+    $achievements = Achievement::distinct()->get();
 
     return response()->json($achievements);
 }
