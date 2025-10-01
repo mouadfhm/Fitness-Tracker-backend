@@ -40,7 +40,7 @@ class FoodController extends Controller
                 }
             ])
             ->addSelect([
-                DB::raw('(SELECT COUNT(*) FROM favorite_foods WHERE favorite_foods.food_id = foods.id AND favorite_foods.user_id = ' . $userId . ') AS is_favorite ')
+                DB::raw('(SELECT COUNT(*) FROM favorite_foods WHERE favorite_foods.food_id = foods.id AND favorite_foods.is_favorite = 1 AND favorite_foods.user_id = ' . $userId . ' ) AS is_favorite ')
             ])
             ->orderByDesc('is_favorite')
             ->orderByDesc('meals_count')
