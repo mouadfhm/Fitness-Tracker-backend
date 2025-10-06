@@ -53,4 +53,18 @@ class ProfileController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+
+    // Delete user profile
+    public function delete(Request $request)
+    {
+        $user = $request->user();
+        try {
+            $user->tokens()->delete(); // Revoke all tokens
+            $user->is_valid = false; // Set is_valid to false
+            $user->save(); // Save the changes
+            return response()->json(['message' => 'User profile deleted successfully.']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
 }

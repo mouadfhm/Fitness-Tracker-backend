@@ -69,6 +69,9 @@ class AuthController extends Controller
                 'email' => ['The provided credentials are incorrect.'],
             ]);
         }
+        if (!$user->is_valid) {
+            return response()->json(['message' => 'This account has been deactivated. Please contact support.'], 403);
+        }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
