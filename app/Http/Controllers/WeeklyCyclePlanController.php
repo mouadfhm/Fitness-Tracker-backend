@@ -11,42 +11,51 @@ use Illuminate\Support\Facades\Auth;
 
 class WeeklyCyclePlanController extends Controller
 {
-    public function index()
-    {
-        $user = Auth::user();
-        $weeks = [];
+public function index()
+{
+    $user = Auth::user();
+    $weeks = [];
 
-        // Retrieve all scheduled workouts for the authenticated user, eager load the related workout.
-        $workouts = ScheduledWorkout::with('workout')
-            ->where('user_id', $user->id)
-            ->orderBy('scheduled_at')
-            ->get();
+    $workouts = ScheduledWorkout::with('workout')
+        ->where('user_id', $user->id)
+        ->orderBy('scheduled_at')
+        ->get();
 
-        // Group workouts by week and day
-        foreach ($workouts as $scheduledWorkout) {
-            $scheduledAt = Carbon::parse($scheduledWorkout->scheduled_at);
-            $weekOfYear = $scheduledAt->weekOfYear;
-            $dayKey = strtolower($scheduledAt->format('D'));
+    foreach ($workouts as $scheduledWorkout) {
+        $date = Carbon::parse($scheduledWorkout->scheduled_at);
 
-            if (!isset($weeks[$weekOfYear])) {
-                $weeks[$weekOfYear] = [
-                    'mon' => [],
-                    'tue' => [],
-                    'wed' => [],
-                    'thu' => [],
-                    'fri' => [],
-                    'sat' => [],
-                    'sun' => [],
+        // Start of the week (Monday)
+        $weekStart = $date->copy()->startOfWeek(Carbon::MONDAY)->toDateString();
+        $weekEnd = $date->copy()->endOfWeek(Carbon::SUNDAY)->toDateString();
+
+        if (!isset($weeks[$weekStart])) {
+            $weeks[$weekStart] = [
+                'week_start' => $weekStart,
+                'week_end' => $weekEnd,
+                'days' => []
+            ];
+
+            // Initialize all days of the week
+            for ($i = 0; $i < 7; $i++) {
+                $day = Carbon::parse($weekStart)->addDays($i);
+                $key = strtolower($day->format('D'));
+
+                $weeks[$weekStart]['days'][$key] = [
+                    'date' => $day->toDateString(),
+                    'workouts' => []
                 ];
-            }
-
-            if (isset($weeks[$weekOfYear][$dayKey])) {
-                $weeks[$weekOfYear][$dayKey][] = $scheduledWorkout;
             }
         }
 
-        return response()->json(['weeks' => $weeks]);
+        $dayKey = strtolower($date->format('D'));
+
+        $weeks[$weekStart]['days'][$dayKey]['workouts'][] = $scheduledWorkout;
     }
+
+    return response()->json([
+        'weeks' => array_values($weeks)
+    ]);
+}
 
     public function store(Request $request)
     {
