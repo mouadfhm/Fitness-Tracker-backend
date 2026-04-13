@@ -1,0 +1,25 @@
+name: Deploy Fitness Backend
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Oracle Cloud
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd ~/apps/fitness-backend
+            git pull origin main
+            cd ~/apps
+            docker compose up -d --build fitness-backend
+            docker compose exec -T fitness-backend php artisan migrate --force
+            docker compose exec -T fitness-backend php artisan config:cache
+            docker compose exec -T fitness-backend php artisan route:cache
