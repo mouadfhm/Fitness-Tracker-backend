@@ -73,6 +73,7 @@ class AuthController extends Controller
             return response()->json(['message' => 'This account has been deactivated. Please contact support.'], 403);
         }
 
+        $user->tokens()->delete();
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
