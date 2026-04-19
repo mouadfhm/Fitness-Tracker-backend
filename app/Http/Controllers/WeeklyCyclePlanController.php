@@ -65,7 +65,7 @@ public function index()
             'days_pattern' => 'required|array', // e.g., {"mon": 1, "tue": 2, "wed": null, "thu": 1, "fri": 2, "sat": null, "sun": null}
         ]);
 
-        $data['user_id'] = auth::id(); // Ensure user is authenticated
+        $data['user_id'] = Auth::id();
         $cyclePlan = WeeklyCyclePlan::create($data);
 
         // Optionally: Generate scheduled workout dates based on this cycle plan.
@@ -84,8 +84,8 @@ public function index()
             'days_pattern' => 'sometimes|array', // e.g., {"mon": 1, "tue": 2, "wed": null, "thu": 1, "fri": 2, "sat": null, "sun": null}
         ]);
 
-        $data['user_id'] = auth::id(); // Ensure user is authenticated
-        $cyclePlan = WeeklyCyclePlan::findOrFail($id);
+        $cyclePlan = WeeklyCyclePlan::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
+        unset($data['user_id']);
         $cyclePlan->update($data);
 
         // Optionally: Generate scheduled workout dates based on this cycle plan.

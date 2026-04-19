@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Exercise;
 use App\Models\Workout;
-use App\Models\WorkoutPlan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Services\AchievementService;
@@ -39,6 +38,9 @@ class WorkoutController extends Controller
             'workout_date'   => 'required|date',
         ]);
         $exercise = Exercise::where('description', $validatedData['activity_type'])->first();
+        if (!$exercise) {
+            return response()->json(['message' => 'Unknown activity type.'], 422);
+        }
         $workout = Workout::create([
             'user_id'       => Auth::id(),
             'activity_type' => $validatedData['activity_type'],
@@ -129,16 +131,5 @@ class WorkoutController extends Controller
         return response()->json([
             'message' => 'Workout deleted successfully.'
         ]);
-    }
-    public function indexx()
-    {
-        return response()->json(WorkoutPlan::with('exercises')->get());
-    }
-
-    // GET /api/workouts/{id} - show details of a specific workout plan
-    public function showw($id)
-    {
-        $plan = WorkoutPlan::with('exercises')->findOrFail($id);
-        return response()->json($plan);
     }
 }

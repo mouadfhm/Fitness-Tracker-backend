@@ -13,12 +13,13 @@ class CustomWorkoutController extends Controller
     {
         try {
             $data = $request->validate([
-                'name' => 'required|string',
-                'description' => 'nullable|string',
-                'gym_exercises' => 'required|array', // array of exercises with sets/reps/etc.
+                'name'            => 'required|string',
+                'description'     => 'nullable|string',
+                'gym_exercises'   => 'required|array',
+                'gym_exercises.*' => 'integer|exists:gym_exercises,id',
             ]);
             $customWorkout = CustomWorkout::create([
-                'user_id' => auth::id(),
+                'user_id' => Auth::id(),
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
             ]);
@@ -32,7 +33,7 @@ class CustomWorkoutController extends Controller
     // PUT /api/custom-workouts/{id} - update a custom workout
     public function update(Request $request, $id)
     {
-        $customWorkout = CustomWorkout::where('user_id', auth::id())->findOrFail($id);
+        $customWorkout = CustomWorkout::where('user_id', Auth::id())->findOrFail($id);
         try {
             $data = $request->validate([
                 'name' => 'required|string',
@@ -53,13 +54,13 @@ class CustomWorkoutController extends Controller
     // GET /api/custom-workouts - list user custom workouts
     public function index()
     {
-        $workouts = CustomWorkout::with('gym_exercises')->where('user_id', auth::id())->get();
+        $workouts = CustomWorkout::with('gym_exercises')->where('user_id', Auth::id())->get();
         return response()->json($workouts);
     }
 
     public function show($id)
     {
-        $workout = CustomWorkout::with('gym_exercises')->where('user_id', auth::id())->findOrFail($id);
+        $workout = CustomWorkout::with('gym_exercises')->where('user_id', Auth::id())->findOrFail($id);
         return response()->json($workout);
     }
 

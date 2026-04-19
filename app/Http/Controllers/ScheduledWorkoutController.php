@@ -16,14 +16,14 @@ class ScheduledWorkoutController extends Controller
             'workout_id' => 'nullable|integer', // plan or custom workout ID
 
         ]);
-        $schedule = ScheduledWorkout::create(array_merge($data, ['user_id' => auth::id()]));
+        $schedule = ScheduledWorkout::create(array_merge($data, ['user_id' => Auth::id()]));
         return response()->json($schedule, 201);
     }
 
     // GET /api/scheduled-workouts - list scheduled workouts
     public function index()
     {
-        $schedules = ScheduledWorkout::where('user_id', auth::id())->get();
+        $schedules = ScheduledWorkout::where('user_id', Auth::id())->get();
         return response()->json($schedules);
     }
     // PUT /api/scheduled-workouts

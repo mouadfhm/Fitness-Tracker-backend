@@ -16,9 +16,9 @@ public function store(Request $request)
         'workout_date' => 'required|date',
         'duration' => 'nullable|integer',
         'calories_burned' => 'nullable|integer',
-        'details' => 'nullable|json',
+        'details' => 'nullable|array',
     ]);
-    $log = WorkoutLog::create(array_merge($data, ['user_id' => auth::id()]));
+    $log = WorkoutLog::create(array_merge($data, ['user_id' => Auth::id()]));
     }catch(\Exception $e){
         return response()->json(['error' => $e->getMessage()], 400);
     }
@@ -28,6 +28,6 @@ public function store(Request $request)
 // GET /api/workout-logs - get user's workout history
 public function index()
 {
-    $logs = WorkoutLog::where('user_id', auth::id())->get();
+    $logs = WorkoutLog::where('user_id', Auth::id())->get();
     return response()->json($logs);
 }}
