@@ -15,7 +15,7 @@ class NotificationController extends Controller
         $request->validate(['device_token' => 'required']);
 
         UserDevice::updateOrCreate(
-            ['user_id' => auth::id()],
+            ['user_id' => Auth::id()],
             ['device_token' => $request->device_token]
         );
 

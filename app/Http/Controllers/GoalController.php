@@ -28,6 +28,12 @@ class GoalController extends Controller
 
             // Recalculate macros based on the updated goal
             $macros = $this->calculateMacros($user);
+            if ($macros === null) {
+                return response()->json([
+                    'message' => 'Fitness goal updated successfully, but macros cannot be calculated until weight, height, and age are set.',
+                    'user'    => $user,
+                ]);
+            }
 
             return response()->json([
                 'message' => 'Fitness goal updated successfully.',
@@ -43,15 +49,22 @@ class GoalController extends Controller
     {
         $user = $request->user();
         $macros = $this->calculateMacros($user);
+        if ($macros === null) {
+            return response()->json(['message' => 'Profile incomplete. Please set weight, height, and age.'], 422);
+        }
         return response()->json([
-            'user'    => $user,
-            'macros'  => $macros,
+            'user'   => $user,
+            'macros' => $macros,
         ]);
     }
 
     // Helper method for calculating daily macronutrient needs
     protected function calculateMacros($user)
     {
+        if (is_null($user->weight) || is_null($user->height) || is_null($user->age)) {
+            return null;
+        }
+
         // Fetch total workout calories burned today
         $workouts = Workout::where('user_id', $user->id)
             ->whereDate('workout_date', today())
@@ -81,7 +94,7 @@ class GoalController extends Controller
         // Adjust macros dynamically
         $protein = $user->weight * 2; // More protein on high workout days
         $fat     = ($dailyCalories * 0.25) / 9; // 25% of total calories from fat, divided by 9 calories per gram
-        $carbs   = ($dailyCalories - ($protein * 4 + $fat * 9)) / 4;
+        $carbs   = max(0, ($dailyCalories - ($protein * 4 + $fat * 9)) / 4);
 
         return [
             'bmr'      => $bmr,

@@ -32,22 +32,25 @@ class ProfileController extends Controller
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         }
-        try {
-            $progress = Progress::create([
-                'user_id' => $user->id,
-                'date'    => date('Y-m-d'),
-                'weight'  => $validatedData['weight'],
-            ]);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+        $progress = null;
+        if (isset($validatedData['weight'])) {
+            try {
+                $progress = Progress::create([
+                    'user_id' => $user->id,
+                    'date'    => date('Y-m-d'),
+                    'weight'  => $validatedData['weight'],
+                ]);
+            } catch (\Exception $e) {
+                return response()->json(['error' => $e->getMessage()], 500);
+            }
         }
 
         try {
             $user->update($validatedData);
             return response()->json([
-                'message' => 'Profile updated successfully.',
-                'user'    => $user,
-                'progress' => $progress
+                'message'  => 'Profile updated successfully.',
+                'user'     => $user,
+                'progress' => $progress,
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);

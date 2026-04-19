@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Food;
 use App\Models\Meal;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -93,13 +94,15 @@ class MealController extends Controller
             //count how many meals the user logged every days in row
             $achievementService = new AchievementService();
             $achievementService->checkAndUnlock(Auth::user(), 'meals', 1);
-            $currentDate = now()->toDateString();
+            $mealDates = Auth::user()->meals()
+                ->whereDate('date', '>=', now()->subDays(30))
+                ->pluck('date')
+                ->map(fn($d) => Carbon::parse($d)->toDateString())
+                ->unique()
+                ->values();
             $consecutiveDays = 0;
-            for ($i = 0; $i <= 30; $i++) { // Check up to 30 days back
-                $date = now()->subDays($i)->toDateString();
-                $hasMeal = Auth::user()->meals()->whereDate('date', $date)->exists();
-
-                if (!$hasMeal) {
+            for ($i = 0; $i <= 30; $i++) {
+                if (!$mealDates->contains(now()->subDays($i)->toDateString())) {
                     break;
                 }
                 $consecutiveDays++;

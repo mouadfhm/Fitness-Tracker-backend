@@ -14,8 +14,7 @@ class ProgressController extends Controller
     {
         $progress = Progress::where('user_id', Auth::id())
             ->orderBy('date', 'desc')
-            ->limit(10)
-            ->get();
+            ->paginate(30);
 
         return response()->json($progress);
     }

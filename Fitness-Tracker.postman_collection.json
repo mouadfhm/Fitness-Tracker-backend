@@ -1,0 +1,759 @@
+{
+  "info": {
+    "name": "Fitness Tracker API",
+    "_postman_id": "fitness-tracker-api",
+    "description": "Complete API collection for the Fitness Tracker Laravel backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/register", "host": ["{{base_url}}"], "path": ["register"] },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\",\n  \"age\": 25,\n  \"weight\": 75,\n  \"height\": 175,\n  \"gender\": \"male\",\n  \"activity_level\": \"moderate\",\n  \"fitness_goal\": \"muscle_gain\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.access_token) {",
+                  "  pm.collectionVariables.set('token', json.access_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/login", "host": ["{{base_url}}"], "path": ["login"] },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profile",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/profile", "host": ["{{base_url}}"], "path": ["profile"] }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/profile", "host": ["{{base_url}}"], "path": ["profile"] },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"name\": \"John Updated\",\n  \"age\": 26,\n  \"weight\": 78,\n  \"height\": 175,\n  \"gender\": \"male\",\n  \"activity_level\": \"active\",\n  \"fitness_goal\": \"muscle_gain\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Profile",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/profile", "host": ["{{base_url}}"], "path": ["profile"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Foods",
+      "item": [
+        {
+          "name": "Search Foods",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/foods/search?name=chicken",
+              "host": ["{{base_url}}"],
+              "path": ["foods", "search"],
+              "query": [{ "key": "name", "value": "chicken" }]
+            }
+          }
+        },
+        {
+          "name": "Add Food",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/foods/add", "host": ["{{base_url}}"], "path": ["foods", "add"] },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"name\": \"Chicken Breast\",\n  \"calories\": 165,\n  \"protein\": 31,\n  \"carbs\": 0,\n  \"fats\": 3.6\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Food",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/foods/1", "host": ["{{base_url}}"], "path": ["foods", "1"] }
+          }
+        },
+        {
+          "name": "Update Food",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/foods/1", "host": ["{{base_url}}"], "path": ["foods", "1"] },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"calories\": 170,\n  \"protein\": 32\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Food",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/foods/1", "host": ["{{base_url}}"], "path": ["foods", "1"] }
+          }
+        },
+        {
+          "name": "Add Favorite Food",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/foods/favorite/1", "host": ["{{base_url}}"], "path": ["foods", "favorite", "1"] }
+          }
+        },
+        {
+          "name": "Remove Favorite Food",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/foods/remove-favorite/1", "host": ["{{base_url}}"], "path": ["foods", "remove-favorite", "1"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Meals",
+      "item": [
+        {
+          "name": "Get Total Macros (Today)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/meals/macros", "host": ["{{base_url}}"], "path": ["meals", "macros"] }
+          }
+        },
+        {
+          "name": "Search Meals",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/meals/search?date=2026-04-19&meal_time=breakfast",
+              "host": ["{{base_url}}"],
+              "path": ["meals", "search"],
+              "query": [
+                { "key": "date", "value": "2026-04-19" },
+                { "key": "meal_time", "value": "breakfast" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Log Meal",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/meals/add", "host": ["{{base_url}}"], "path": ["meals", "add"] },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"meal_time\": \"breakfast\",\n  \"date\": \"2026-04-19\",\n  \"foods\": [\n    {\n      \"food_id\": 1,\n      \"quantity\": 150\n    },\n    {\n      \"name\": \"Oatmeal\",\n      \"quantity\": 100\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Meal",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/meals/1", "host": ["{{base_url}}"], "path": ["meals", "1"] }
+          }
+        },
+        {
+          "name": "Update Meal",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/meals/1", "host": ["{{base_url}}"], "path": ["meals", "1"] },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"meal_time\": \"lunch\",\n  \"foods\": [\n    {\n      \"food_id\": 1,\n      \"quantity\": 200\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Meal",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/meals/1", "host": ["{{base_url}}"], "path": ["meals", "1"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Goals",
+      "item": [
+        {
+          "name": "Get Goals & Macros",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/goals/search", "host": ["{{base_url}}"], "path": ["goals", "search"] }
+          }
+        },
+        {
+          "name": "Update Fitness Goal",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/goals/", "host": ["{{base_url}}"], "path": ["goals", ""] },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"fitness_goal\": \"weight_loss\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Progress",
+      "item": [
+        {
+          "name": "Get Progress",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/progress/", "host": ["{{base_url}}"], "path": ["progress", ""] }
+          }
+        },
+        {
+          "name": "Log Progress",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/progress/add", "host": ["{{base_url}}"], "path": ["progress", "add"] },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"date\": \"2026-04-19\",\n  \"weight\": 74.5\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Workouts (v1)",
+      "item": [
+        {
+          "name": "Search Workouts",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/workouts/search?activity_type=Running&workout_date=2026-04-19",
+              "host": ["{{base_url}}"],
+              "path": ["workouts", "search"],
+              "query": [
+                { "key": "activity_type", "value": "Running" },
+                { "key": "workout_date", "value": "2026-04-19" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Exercises",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/workouts/exercises", "host": ["{{base_url}}"], "path": ["workouts", "exercises"] }
+          }
+        },
+        {
+          "name": "Get Calories Burned",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/workouts/calories-burned?workout_date=2026-04-19",
+              "host": ["{{base_url}}"],
+              "path": ["workouts", "calories-burned"],
+              "query": [{ "key": "workout_date", "value": "2026-04-19" }]
+            }
+          }
+        },
+        {
+          "name": "Log Workout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/workouts/add", "host": ["{{base_url}}"], "path": ["workouts", "add"] },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"activity_type\": \"Running\",\n  \"duration\": 30,\n  \"workout_date\": \"2026-04-19\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Workout",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/workouts/1", "host": ["{{base_url}}"], "path": ["workouts", "1"] }
+          }
+        },
+        {
+          "name": "Update Workout",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/workouts/1", "host": ["{{base_url}}"], "path": ["workouts", "1"] },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"duration\": 45,\n  \"calories_burned\": 350\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Workout",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/workouts/1", "host": ["{{base_url}}"], "path": ["workouts", "1"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Workouts v2 - Gym Exercises",
+      "item": [
+        {
+          "name": "List Gym Exercises",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/v2/workouts/exercises", "host": ["{{base_url}}"], "path": ["v2", "workouts", "exercises"] }
+          }
+        },
+        {
+          "name": "Search Gym Exercises",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v2/workouts/exercises/search?name=bench",
+              "host": ["{{base_url}}"],
+              "path": ["v2", "workouts", "exercises", "search"],
+              "query": [{ "key": "name", "value": "bench" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Workouts v2 - Custom Workouts",
+      "item": [
+        {
+          "name": "List Custom Workouts",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/v2/workouts/custom-workouts", "host": ["{{base_url}}"], "path": ["v2", "workouts", "custom-workouts"] }
+          }
+        },
+        {
+          "name": "Get Custom Workout",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/v2/workouts/custom-workouts/1", "host": ["{{base_url}}"], "path": ["v2", "workouts", "custom-workouts", "1"] }
+          }
+        },
+        {
+          "name": "Create Custom Workout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/v2/workouts/custom-workouts", "host": ["{{base_url}}"], "path": ["v2", "workouts", "custom-workouts"] },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"name\": \"My Push Day\",\n  \"description\": \"Chest, shoulders and triceps\",\n  \"gym_exercises\": [1, 3, 5]\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Custom Workout",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/v2/workouts/custom-workouts/1", "host": ["{{base_url}}"], "path": ["v2", "workouts", "custom-workouts", "1"] },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"name\": \"My Updated Push Day\",\n  \"description\": \"Updated description\",\n  \"gym_exercises\": [1, 2, 5]\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Workouts v2 - Workout Logs",
+      "item": [
+        {
+          "name": "List Workout Logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/v2/workouts/workout-logs", "host": ["{{base_url}}"], "path": ["v2", "workouts", "workout-logs"] }
+          }
+        },
+        {
+          "name": "Log Workout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/v2/workouts/workout-logs", "host": ["{{base_url}}"], "path": ["v2", "workouts", "workout-logs"] },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"workout_date\": \"2026-04-19\",\n  \"duration\": 60,\n  \"calories_burned\": 450,\n  \"details\": {\n    \"notes\": \"Great session\",\n    \"exercises_completed\": 5\n  }\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Workouts v2 - Scheduled Workouts",
+      "item": [
+        {
+          "name": "List Scheduled Workouts",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/v2/workouts/scheduled-workouts", "host": ["{{base_url}}"], "path": ["v2", "workouts", "scheduled-workouts"] }
+          }
+        },
+        {
+          "name": "Schedule Workout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/v2/workouts/scheduled-workouts", "host": ["{{base_url}}"], "path": ["v2", "workouts", "scheduled-workouts"] },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"scheduled_at\": \"2026-04-21 08:00:00\",\n  \"workout_id\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Scheduled Workout",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/v2/workouts/scheduled-workouts/1", "host": ["{{base_url}}"], "path": ["v2", "workouts", "scheduled-workouts", "1"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Workouts v2 - Weekly Cycle Plans",
+      "item": [
+        {
+          "name": "Get Weekly Cycle Plans",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/v2/workouts/weekly-cycle-plans", "host": ["{{base_url}}"], "path": ["v2", "workouts", "weekly-cycle-plans"] }
+          }
+        },
+        {
+          "name": "Create Weekly Cycle Plan",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/v2/workouts/weekly-cycle-plans", "host": ["{{base_url}}"], "path": ["v2", "workouts", "weekly-cycle-plans"] },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"start_date\": \"2026-04-21\",\n  \"weeks\": 4,\n  \"days_pattern\": {\n    \"mon\": 1,\n    \"tue\": null,\n    \"wed\": 2,\n    \"thu\": null,\n    \"fri\": 1,\n    \"sat\": null,\n    \"sun\": null\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Weekly Cycle Plan",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/v2/workouts/weekly-cycle-plans/1", "host": ["{{base_url}}"], "path": ["v2", "workouts", "weekly-cycle-plans", "1"] },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"weeks\": 6,\n  \"days_pattern\": {\n    \"mon\": 1,\n    \"tue\": 2,\n    \"wed\": null,\n    \"thu\": 1,\n    \"fri\": 2,\n    \"sat\": null,\n    \"sun\": null\n  }\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Workouts v2 - Recommendations",
+      "item": [
+        {
+          "name": "Get AI Recommendations",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/v2/workouts/recommendations", "host": ["{{base_url}}"], "path": ["v2", "workouts", "recommendations"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Achievements",
+      "item": [
+        {
+          "name": "Get All Achievements",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/achievements", "host": ["{{base_url}}"], "path": ["achievements"] }
+          }
+        },
+        {
+          "name": "Get User Achievements",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/user/achievements", "host": ["{{base_url}}"], "path": ["user", "achievements"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Save Device Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/save-device-token", "host": ["{{base_url}}"], "path": ["save-device-token"] },
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"device_token\": \"your-fcm-device-token-here\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Admin Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/admin/dashboard", "host": ["{{base_url}}"], "path": ["admin", "dashboard"] }
+          }
+        }
+      ]
+    }
+  ]
+}

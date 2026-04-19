@@ -33,24 +33,22 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Food search
     Route::group(['prefix' => 'foods'], function () {
-        Route::apiResource('/', FoodController::class);
+        Route::get('/search', [FoodController::class, 'index']);
         Route::post('/add', [FoodController::class, 'store']);
-        Route::put('/{id}', [FoodController::class, 'update']);
         Route::post('/favorite/{id}', [FoodController::class, 'addFavorite']);
         Route::post('/remove-favorite/{id}', [FoodController::class, 'removeFavorite']);
-        Route::delete('/{id}', [FoodController::class, 'destroy']);
-        Route::get('/search', [FoodController::class, 'index']);
         Route::get('/{id}', [FoodController::class, 'show']);
+        Route::put('/{id}', [FoodController::class, 'update']);
+        Route::delete('/{id}', [FoodController::class, 'destroy']);
     });
 
     // Meal logging & food search
     Route::group(['prefix' => 'meals'], function () {
-        Route::apiResource('/', MealController::class);
         Route::get('/macros', [MealController::class, 'totalMacros']);
-        Route::post('/add', [MealController::class, 'store']);
-        Route::put('/{id}', [MealController::class, 'update']);
         Route::get('/search', [MealController::class, 'index']);
+        Route::post('/add', [MealController::class, 'store']);
         Route::get('/{id}', [MealController::class, 'show']);
+        Route::put('/{id}', [MealController::class, 'update']);
         Route::delete('/{id}', [MealController::class, 'destroy']);
     });
 
@@ -68,14 +66,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Optional: Workout tracking
     Route::group(['prefix' => 'workouts'], function () {
-        Route::apiResource('workouts', WorkoutController::class);
-        Route::post('/add', [WorkoutController::class, 'store']);
-        Route::put('/{id}', [WorkoutController::class, 'update']);
-        Route::delete('/{id}', [WorkoutController::class, 'destroy']);
         Route::get('/search', [WorkoutController::class, 'index']);
         Route::get('/exercises', [WorkoutController::class, 'exercises']);
         Route::post('/calories-burned', [WorkoutController::class, 'caloriesBurned']);
+        Route::post('/add', [WorkoutController::class, 'store']);
         Route::get('/{id}', [WorkoutController::class, 'show']);
+        Route::put('/{id}', [WorkoutController::class, 'update']);
+        Route::delete('/{id}', [WorkoutController::class, 'destroy']);
     });
     // Optional: Workout tracking
     Route::group(['prefix' => 'v2/workouts'], function () {
@@ -109,10 +106,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/weekly-cycle-plans/{id}', [WeeklyCyclePlanController::class, 'update']);
     });
 
-    Route::get('/user/achievements', [AchievementController::class, 'getUserAchievements'])->middleware('auth:sanctum');
+    Route::get('/user/achievements', [AchievementController::class, 'getUserAchievements']);
     Route::get('/achievements', [AchievementController::class, 'getAchievements']);
 
-    Route::post('/save-device-token', [NotificationController::class, 'saveDeviceToken'])->middleware('auth:sanctum');
+    Route::post('/save-device-token', [NotificationController::class, 'saveDeviceToken']);
 
     // Admin routes
     Route::middleware('role:admin')->group(function () {

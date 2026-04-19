@@ -6,7 +6,6 @@ use App\Models\FavoriteFood;
 use App\Models\Food;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class FoodController extends Controller
 {
@@ -18,7 +17,8 @@ class FoodController extends Controller
             ->where(function ($query) use ($userId) {
                 $query->where('added_by', $userId)
                     ->orWhereNull('added_by');
-            });
+            })
+            ->whereRaw("name REGEXP '[^0-9]'");
 
         if ($request->filled('name')) {
             $query->where('name', 'like', "%{$request->name}%");
@@ -39,9 +39,7 @@ class FoodController extends Controller
                     $query->where('user_id', $userId);
                 }
             ])
-            ->addSelect([
-                DB::raw('(SELECT COUNT(*) FROM favorite_foods WHERE favorite_foods.food_id = foods.id AND favorite_foods.is_favorite = 1 AND favorite_foods.user_id = ' . $userId . ' ) AS is_favorite ')
-            ])
+            ->selectRaw('(SELECT COUNT(*) FROM favorite_foods WHERE favorite_foods.food_id = foods.id AND favorite_foods.is_favorite = 1 AND favorite_foods.user_id = ?) AS is_favorite', [$userId])
             ->orderByDesc('is_favorite')
             ->orderByDesc('meals_count')
             ->get();
@@ -127,7 +125,7 @@ class FoodController extends Controller
     // Update a food item
     public function update(Request $request, $id)
     {
-        $food = Food::findOrFail($id);
+        $food = Food::where('id', $id)->where('added_by', Auth::id())->firstOrFail();
         $validatedData = $request->validate([
             'name'     => 'sometimes|string|max:255',
             'calories' => 'sometimes|numeric',
@@ -147,7 +145,7 @@ class FoodController extends Controller
     // Delete a food item
     public function destroy($id)
     {
-        $food = Food::findOrFail($id);
+        $food = Food::where('id', $id)->where('added_by', Auth::id())->firstOrFail();
         $food->delete();
 
         return response()->json([
