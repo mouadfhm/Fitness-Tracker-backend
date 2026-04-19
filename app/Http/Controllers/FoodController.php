@@ -17,7 +17,8 @@ class FoodController extends Controller
             ->where(function ($query) use ($userId) {
                 $query->where('added_by', $userId)
                     ->orWhereNull('added_by');
-            });
+            })
+            ->whereRaw("name REGEXP '[^0-9]'");
 
         if ($request->filled('name')) {
             $query->where('name', 'like', "%{$request->name}%");
