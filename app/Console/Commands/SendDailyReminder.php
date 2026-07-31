@@ -3,6 +3,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Services\NotificationService;
+use App\Models\NotificationLog;
 use App\Models\User;
 
 class SendDailyReminder extends Command
@@ -29,7 +30,8 @@ class SendDailyReminder extends Command
             $notificationService->sendNotification(
                 $user->id,
                 "🏋️ Time for Your Workout!",
-                "Don't forget to exercise today and stay fit!"
+                "Don't forget to exercise today and stay fit!",
+                NotificationLog::TYPE_WORKOUT_REMINDER
             );
         }
 

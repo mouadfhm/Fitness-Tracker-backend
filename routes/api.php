@@ -110,6 +110,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/achievements', [AchievementController::class, 'getAchievements']);
 
     Route::post('/save-device-token', [NotificationController::class, 'saveDeviceToken']);
+    Route::post('/notifications/{log}/opened', [NotificationController::class, 'markOpened']);
 
     // Admin routes
     Route::middleware('role:admin')->group(function () {

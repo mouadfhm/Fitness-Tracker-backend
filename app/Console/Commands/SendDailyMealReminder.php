@@ -3,6 +3,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Services\NotificationService;
+use App\Models\NotificationLog;
 use App\Models\User;
 
 class SendDailyMealReminder extends Command
@@ -21,7 +22,8 @@ class SendDailyMealReminder extends Command
             $notificationService->sendNotification(
                 $user->id,
                 "🍽 Time for Your First Meal of The Day!",
-                "Don't forget to follow your diet!"
+                "Don't forget to follow your diet!",
+                NotificationLog::TYPE_MEAL_REMINDER
             );
         }
 
