@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\NotificationLog;
+use App\Models\User;
 use App\Models\UserDevice;
 
 
@@ -37,6 +38,13 @@ class NotificationController extends Controller
         if ($log->opened_at === null) {
             $log->update(['opened_at' => now()]);
         }
+
+        // Opening a notification is engagement, so it resets the backoff even
+        // if the user logs nothing afterwards. Someone still tapping is not
+        // someone to go quiet on — that is the case for reminders working.
+        // Unlike the model observer this cannot ride along on a write, so it is
+        // spelled out here.
+        User::whereKey($request->user()->id)->update(['last_engaged_at' => now()]);
 
         return response()->noContent();
     }

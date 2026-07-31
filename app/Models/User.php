@@ -29,8 +29,12 @@ class User extends Authenticatable
         'remember_token',
     ];
 
+    // Deliberately absent from $fillable: last_engaged_at is written only by
+    // EngagementObserver. In $fillable a user could post it to the profile
+    // endpoint and hold themselves permanently at day 0 — or at day 999.
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'last_engaged_at'   => 'datetime',
     ];
 
     // A user can have many meals.

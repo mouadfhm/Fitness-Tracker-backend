@@ -67,6 +67,39 @@ class NotificationService
     }
 
     /**
+     * Record a notification we chose not to send.
+     *
+     * A withheld reminder is a decision, and a decision that leaves no trace is
+     * indistinguishable from a bug. The row carries the copy the user would
+     * have received, so "why did this person hear nothing for a week?" is
+     * answerable from the table alone.
+     *
+     * Note for anyone querying this: `sent_at` is populated on skipped rows too
+     * (the column is NOT NULL) and means "when the decision was made", not that
+     * anything was delivered. Filter on status before reading it.
+     */
+    public function logSkipped($userId, $title, $body, string $type, string $reason): ?NotificationLog
+    {
+        try {
+            return NotificationLog::create([
+                'user_id' => $userId,
+                'type'    => $type,
+                'title'   => $title,
+                'body'    => $body,
+                'status'  => NotificationLog::STATUS_SKIPPED,
+                'error'   => Str::limit($reason, 250),
+                'sent_at' => now(),
+            ]);
+        } catch (Throwable $e) {
+            Log::error('Could not log skipped notification', [
+                'user_id' => $userId,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
+    }
+
+    /**
      * Logging is bookkeeping, not the point of the call. If the table is
      * missing or the write fails, the notification still goes out.
      */
