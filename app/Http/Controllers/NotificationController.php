@@ -21,7 +21,33 @@ class NotificationController extends Controller
             ['device_token' => $request->device_token]
         );
 
+        $this->storeReportedTimezone(Auth::id(), $request->input('timezone'));
+
         return response()->json(['message' => 'Device token saved successfully']);
+    }
+
+    /**
+     * The app piggybacks its IANA timezone on token registration, which it
+     * already performs on login and on every token refresh — exactly the two
+     * moments the value can have changed.
+     *
+     * Validated rather than trusted, and dropped rather than rejected. A junk
+     * string here must not 422 the request, because that would also throw away
+     * the device token and silently stop notifications for that user
+     * altogether. A client sending nonsense loses its timezone update; it does
+     * not lose push. Junk reaching the column would be worse still: every
+     * scheduler run afterwards would throw inside Carbon and take the entire
+     * reminder batch down with it.
+     */
+    private function storeReportedTimezone(int $userId, mixed $timezone): void
+    {
+        if (!is_string($timezone) || !in_array($timezone, timezone_identifiers_list(), true)) {
+            return;
+        }
+
+        // Not $user->update(): timezone is deliberately outside $fillable so it
+        // cannot be mass-assigned through the profile endpoint.
+        User::whereKey($userId)->update(['timezone' => $timezone]);
     }
 
     public function markOpened(Request $request, NotificationLog $log)
