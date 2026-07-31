@@ -3,10 +3,13 @@
 namespace App\Services;
 
 use App\Models\Achievement;
+use App\Models\NotificationLog;
 use App\Models\UserAchievement;
-use App\Services\NotificationService;
+
 class AchievementService
 {
+    public function __construct(private NotificationService $notificationService) {}
+
     public function checkAndUnlock($user, $type, $progress)
     {
         $achievements = Achievement::where('type', $type)->get();
@@ -26,12 +29,11 @@ class AchievementService
                 'achievement_id' => $achievement->id,
                 'unlocked_at' => now(),
             ]);
-            // Send notification
-            $notificationService = new NotificationService();
-            $notificationService->sendNotification(
+            $this->notificationService->sendNotification(
                 $user->id,
                 "🎉 Achievement Unlocked!",
-                "You've unlocked: " . $achievement->name
+                "You've unlocked: " . $achievement->name,
+                NotificationLog::TYPE_ACHIEVEMENT
             );
         }
     }
