@@ -19,10 +19,17 @@ Artisan::command('inspire', function () {
 //
 // withoutOverlapping because a run that outlives its slot would otherwise be
 // joined by the next one, which would double-send to everyone not yet processed.
+//
+// The 10 is the lock expiry in minutes, and it is not the default. Locks live
+// in the database (CACHE_STORE=database), so a run killed part-way — container
+// restart, OOM — leaves its lock behind, and the default expiry of 24 hours
+// would mean every reminder silently stops for a day. A run takes seconds and
+// the next slot is 30 minutes out, so 10 minutes is loose enough to still catch
+// a genuinely stuck run and tight enough to heal before the next one.
 Schedule::command('send:daily-meal-reminder')
     ->everyThirtyMinutes()
-    ->withoutOverlapping();
+    ->withoutOverlapping(10);
 
 Schedule::command('send:daily-reminder')
     ->everyThirtyMinutes()
-    ->withoutOverlapping();
+    ->withoutOverlapping(10);
