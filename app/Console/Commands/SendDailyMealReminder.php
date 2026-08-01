@@ -32,13 +32,19 @@ class SendDailyMealReminder extends Command
         // users' reminders on this run and then again on the next.
         $now = Carbon::now();
 
-        $sent = 0;
         $skipped = 0;
+
+        // Collected rather than sent one at a time, then handed to sendBulk in
+        // a single call. 600 due users cost two FCM requests instead of 600.
+        // Accumulated across chunks on purpose: batching per chunk would let a
+        // chunk that happens to hold 40 due users spend a whole request on 40
+        // messages.
+        $due = [];
 
         // Chunked, and no longer pre-filtered in SQL. "Has not logged today"
         // depends on where the user is, so it cannot be a whereDoesntHave on one
         // server-side date any more — see hasLoggedToday below.
-        User::query()->chunkById(500, function ($users) use ($notificationService, $engagement, $now, &$sent, &$skipped) {
+        User::query()->chunkById(500, function ($users) use ($notificationService, $engagement, $now, &$due, &$skipped) {
             foreach ($users as $user) {
                 if (!ReminderWindow::isDue($user->localNow($now), self::TARGET_HOUR, self::TARGET_MINUTE)) {
                     continue;
@@ -63,17 +69,23 @@ class SendDailyMealReminder extends Command
                     continue;
                 }
 
-                $notificationService->sendNotification(
-                    $user->id,
-                    self::TITLE,
-                    self::BODY,
-                    NotificationLog::TYPE_MEAL_REMINDER
-                );
-                $sent++;
+                $due[] = $user->id;
             }
         });
 
-        $this->info("Meal reminders: {$sent} sent, {$skipped} held back by engagement backoff.");
+        // Preferences, quiet hours and missing devices are still decided per
+        // user — inside sendBulk, where every other sender already gets them.
+        $result = $notificationService->sendBulk(
+            $due,
+            self::TITLE,
+            self::BODY,
+            NotificationLog::TYPE_MEAL_REMINDER
+        );
+
+        $this->info(
+            "Meal reminders: {$result['sent']} sent, {$result['failed']} failed, " .
+            "{$skipped} held back by engagement backoff, {$result['skipped']} suppressed."
+        );
     }
 
     /**

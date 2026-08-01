@@ -16,6 +16,11 @@ use Throwable;
 class NotificationService
 {
     /**
+     * FCM refuses a batch request carrying more than 500 sub-messages.
+     */
+    private const BATCH_SIZE = 500;
+
+    /**
      * @param string $type One of the NotificationLog::TYPE_* constants.
      */
     public function sendNotification($userId, $title, $body, string $type): ?NotificationLog
@@ -49,19 +54,8 @@ class NotificationService
             $data['log_id'] = (string) $log->id;
         }
 
-        $message = CloudMessage::withTarget('token', $device->device_token)
-            ->withNotification(Notification::create($title, $body))
-            ->withData($data)
-            ->withAndroidConfig([
-                'priority' => 'high',
-                'notification' => [
-                    'channel_id' => 'fitness_reminders',
-                    'sound' => 'default',
-                ],
-            ]);
-
         try {
-            app('firebase')->send($message);
+            app('firebase')->send($this->buildMessage($device->device_token, $title, $body, $data));
         } catch (NotFound | InvalidArgument $e) {
             // The app was uninstalled or the token was rotated. Drop it so we
             // stop paying for a send on every reminder run.
@@ -79,6 +73,196 @@ class NotificationService
         }
 
         return $log;
+    }
+
+    /**
+     * Send one identical notification to many users in batched FCM calls.
+     *
+     * The daily commands used to loop over every user and make one HTTP call
+     * each, synchronously, inside a cron-triggered process. That is fine at the
+     * current size and becomes a timeout at ten times it — the failure arrives
+     * as "reminders stopped going out" long before anyone thinks to look at how
+     * they are sent.
+     *
+     * Batched through `sendAll()` rather than `sendMulticast()`, which is the
+     * one deviation from the spec worth knowing about. Multicast posts a single
+     * *identical* payload to a list of tokens, and our payload is not identical:
+     * it carries the `log_id` the app posts back when the notification is
+     * tapped. Multicast would therefore have bought batching by silently
+     * switching off open-rate tracking on the only two notifications anyone
+     * measures. `sendAll()` posts an array of per-token messages through the
+     * same FCM batch endpoint — one HTTP call per 500 either way — and each
+     * message keeps its own data.
+     *
+     * Per-user copy still belongs in sendNotification(). The two paths coexist
+     * on purpose: this one is for broadcast text, that one for text that names
+     * the person.
+     *
+     * @param  int[] $userIds
+     * @param  string $type One of the NotificationLog::TYPE_* constants.
+     * @return array{sent:int,failed:int,skipped:int}
+     */
+    public function sendBulk(array $userIds, string $title, string $body, string $type): array
+    {
+        $result = ['sent' => 0, 'failed' => 0, 'skipped' => 0];
+
+        $userIds = array_values(array_unique(array_map('intval', $userIds)));
+
+        if ($userIds === []) {
+            return $result;
+        }
+
+        // Two passes. Suppressed users and users with no device are decided and
+        // logged first so that the batches which do go out are full ones: a
+        // single pass would let 500 candidates become 40 messages and turn the
+        // batching back into what it replaced.
+        $recipients = [];
+
+        foreach (array_chunk($userIds, self::BATCH_SIZE) as $chunk) {
+            $tokens = UserDevice::whereIn('user_id', $chunk)->pluck('device_token', 'user_id');
+
+            foreach ($chunk as $userId) {
+                $suppression = $this->suppressionReason($userId, $type);
+
+                if ($suppression !== null) {
+                    $this->logSkipped($userId, $title, $body, $type, $suppression);
+                    $result['skipped']++;
+                    continue;
+                }
+
+                $token = $tokens[$userId] ?? null;
+
+                if (!$token) {
+                    $this->logSkipped($userId, $title, $body, $type, 'No registered device');
+                    $result['skipped']++;
+                    continue;
+                }
+
+                $recipients[$userId] = $token;
+            }
+        }
+
+        foreach (array_chunk($recipients, self::BATCH_SIZE, true) as $batch) {
+            $this->sendBatch($batch, $title, $body, $type, $result);
+        }
+
+        return $result;
+    }
+
+    /**
+     * One FCM call for up to BATCH_SIZE recipients.
+     *
+     * @param array<int,string> $recipients user id => device token
+     * @param array{sent:int,failed:int,skipped:int} $result
+     */
+    private function sendBatch(array $recipients, string $title, string $body, string $type, array &$result): void
+    {
+        $messages = [];
+
+        // Keyed by token because that is all the report gives back to identify a
+        // sub-response by. A list per token rather than a single log: the same
+        // physical device can be registered against two users (user_devices is
+        // upserted on user_id), and both of those rows deserve their outcome.
+        $logsByToken = [];
+
+        foreach ($recipients as $userId => $token) {
+            $log = $this->openLog($userId, $title, $body, $type);
+
+            $data = ['type' => $type];
+            if ($log) {
+                $data['log_id'] = (string) $log->id;
+            }
+
+            try {
+                $messages[] = $this->buildMessage($token, $title, $body, $data);
+            } catch (Throwable $e) {
+                // A token the SDK will not even accept as a target. Left out of
+                // the batch rather than allowed to reject the whole request.
+                Log::warning('Skipping unusable FCM token', [
+                    'user_id' => $userId,
+                    'error' => $e->getMessage(),
+                ]);
+                $this->closeLog($log, NotificationLog::STATUS_FAILED, $e->getMessage());
+                $result['failed']++;
+                continue;
+            }
+
+            if ($log) {
+                $logsByToken[$token][] = $log;
+            }
+        }
+
+        if ($messages === []) {
+            return;
+        }
+
+        $attempted = count($messages);
+
+        try {
+            $report = app('firebase')->sendAll($messages);
+        } catch (Throwable $e) {
+            // The whole batch failed to leave the box — credentials, network,
+            // a 500 from Google. As everywhere else here, it must not take the
+            // caller down with it; the next scheduled run will try again.
+            Log::error('FCM bulk send failed', [
+                'type' => $type,
+                'recipients' => $attempted,
+                'error' => $e->getMessage(),
+            ]);
+
+            foreach ($logsByToken as $logs) {
+                foreach ($logs as $log) {
+                    $this->closeLog($log, NotificationLog::STATUS_FAILED, $e->getMessage());
+                }
+            }
+
+            $result['failed'] += $attempted;
+            return;
+        }
+
+        $failed = 0;
+
+        foreach ($report->failures()->getItems() as $item) {
+            $failed++;
+            $error = $item->error() ? $item->error()->getMessage() : 'Unknown FCM error';
+
+            foreach ($logsByToken[$item->target()->value()] ?? [] as $log) {
+                $this->closeLog($log, NotificationLog::STATUS_FAILED, $error);
+            }
+        }
+
+        $result['failed'] += $failed;
+        $result['sent'] += max(0, $attempted - $failed);
+
+        // The app was uninstalled or the token was rotated. One delete for the
+        // batch, in place of the per-send NotFound/InvalidArgument catch that
+        // does this job on the single-send path.
+        $stale = array_values(array_unique(array_merge($report->invalidTokens(), $report->unknownTokens())));
+
+        if ($stale !== []) {
+            Log::info('Dropping stale FCM tokens', ['count' => count($stale)]);
+            UserDevice::whereIn('device_token', $stale)->delete();
+        }
+    }
+
+    /**
+     * Shared by both send paths so the Android channel id cannot drift between
+     * them. It has to match `firebase_service.dart` and the manifest's
+     * `default_notification_channel_id`, and a reminder posted to a channel the
+     * app never created is a notification nobody sees.
+     */
+    private function buildMessage(string $token, string $title, string $body, array $data): CloudMessage
+    {
+        return CloudMessage::withTarget('token', $token)
+            ->withNotification(Notification::create($title, $body))
+            ->withData($data)
+            ->withAndroidConfig([
+                'priority' => 'high',
+                'notification' => [
+                    'channel_id' => 'fitness_reminders',
+                    'sound' => 'default',
+                ],
+            ]);
     }
 
     /**
