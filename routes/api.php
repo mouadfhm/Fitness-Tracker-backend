@@ -11,6 +11,7 @@ use App\Http\Controllers\WorkoutController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\NotificationPreferenceController;
 use App\Http\Controllers\RecommendationController;
 use App\Http\Controllers\CustomWorkoutController;
 use App\Http\Controllers\GymExerciseController;
@@ -111,6 +112,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/save-device-token', [NotificationController::class, 'saveDeviceToken']);
     Route::post('/notifications/{log}/opened', [NotificationController::class, 'markOpened']);
+
+    Route::get('/notification-preferences', [NotificationPreferenceController::class, 'show']);
+    Route::put('/notification-preferences', [NotificationPreferenceController::class, 'update']);
 
     // Admin routes
     Route::middleware('role:admin')->group(function () {

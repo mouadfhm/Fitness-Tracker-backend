@@ -99,4 +99,16 @@ class User extends Authenticatable
     {
         return $this->hasMany(Food::class, 'added_by');
     }
+
+    /**
+     * Notification settings, if this user has ever saved any.
+     *
+     * Null until then, which is a real state rather than an oversight — see
+     * NotificationPreference. Anything that needs the settings regardless should
+     * call NotificationPreference::forUser(), which fills in the defaults.
+     */
+    public function notificationPreference()
+    {
+        return $this->hasOne(NotificationPreference::class);
+    }
 }
