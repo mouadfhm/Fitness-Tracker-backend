@@ -6,6 +6,7 @@ use App\Models\NotificationLog;
 use App\Models\User;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * Decides whether a user should be reminded, based on how long it has been
@@ -91,23 +92,58 @@ class EngagementService
     }
 
     /**
+     * Takes the model rather than an id because every caller already holds one,
+     * from the chunk it is iterating. Looking it up again here was a second
+     * SELECT of a row the command had in hand, per user, per run.
+     *
      * @param string $type One of the NotificationLog::TYPE_* constants.
      */
-    public function dueForReminder(int $userId, string $type): bool
+    public function dueForReminder(User $user, string $type): bool
     {
-        $user = User::find($userId);
-
-        if (!$user) {
-            return false;
-        }
-
         return self::shouldSend(
             self::daysInactive($user->last_engaged_at),
-            $this->daysSinceLastSent($userId, $type)
+            self::daysSince($this->lastSentAt($user->id, $type))
         );
     }
 
     /**
+     * The same decision for a whole chunk, in one query instead of one each.
+     *
+     * This is the batching that matters. The per-user form issues a `max`
+     * against notification_logs for every candidate; at ten thousand users on a
+     * half-hourly scheduler that is the dominant cost of the run, and the
+     * answer for all of them fits in a single grouped read.
+     *
+     * @param  Collection<int,User> $users
+     * @param  string $type One of the NotificationLog::TYPE_* constants.
+     * @return array<int,bool> user id => may we send
+     */
+    public function dueForReminderMany(Collection $users, string $type): array
+    {
+        if ($users->isEmpty()) {
+            return [];
+        }
+
+        $lastSent = $this->lastSentAtMany($users->pluck('id')->all(), $type);
+
+        $decisions = [];
+
+        foreach ($users as $user) {
+            // Carbon::now() is still read per user, inside daysSince, as it was
+            // when this ran one user at a time. Hoisting it out of the loop
+            // would be a behaviour change hiding inside a performance one.
+            $decisions[$user->id] = self::shouldSend(
+                self::daysInactive($user->last_engaged_at),
+                self::daysSince($lastSent[$user->id] ?? null)
+            );
+        }
+
+        return $decisions;
+    }
+
+    /**
+     * When this type last actually reached the user, or null if it never has.
+     *
      * Only rows we actually delivered count.
      *
      * Counting `skipped` rows here would be a ratchet with no way out: today's
@@ -116,21 +152,55 @@ class EngagementService
      * `failed` is excluded for the plainer reason that nothing arrived on the
      * device, so it cannot have annoyed anyone.
      */
-    private function daysSinceLastSent(int $userId, string $type): ?int
+    private function lastSentAt(int $userId, string $type): ?string
     {
-        $lastSentAt = NotificationLog::where('user_id', $userId)
+        return NotificationLog::where('user_id', $userId)
             ->where('type', $type)
             ->where('status', NotificationLog::STATUS_SENT)
             ->max('sent_at');
+    }
 
+    /**
+     * lastSentAt for many users in one grouped read.
+     *
+     * Users with no delivered row of this type are simply absent from the
+     * result, and the caller reads that absence as null — the same "never sent"
+     * the single-user form returns for them.
+     *
+     * Served by the existing (user_id, type, sent_at) index as a prefix.
+     *
+     * @param  int[] $userIds
+     * @return array<int,string> user id => sent_at
+     */
+    private function lastSentAtMany(array $userIds, string $type): array
+    {
+        return NotificationLog::query()
+            ->whereIn('user_id', $userIds)
+            ->where('type', $type)
+            ->where('status', NotificationLog::STATUS_SENT)
+            ->groupBy('user_id')
+            ->selectRaw('user_id, max(sent_at) as last_sent_at')
+            ->get()
+            ->pluck('last_sent_at', 'user_id')
+            ->all();
+    }
+
+    /**
+     * Whole days between a `sent_at` and now, or null for "never sent".
+     *
+     * Shared by both paths above rather than spelled out in each. Compared on
+     * day boundaries rather than as an elapsed interval: the scheduler fires
+     * within a minute of the target time, so a run a few seconds earlier than
+     * yesterday's would fail an exact ">= 24h" test and silently drop the
+     * reminder to every other day. That is a subtle enough trap to be worth
+     * having exactly one copy of.
+     */
+    private static function daysSince(?string $lastSentAt): ?int
+    {
         if (!$lastSentAt) {
             return null;
         }
 
-        // Compared on day boundaries rather than as an elapsed interval. The
-        // scheduler fires within a minute of the target time, so a run a few
-        // seconds earlier than yesterday's would fail an exact ">= 24h" test
-        // and silently drop the reminder to every other day.
         return (int) Carbon::parse($lastSentAt)->startOfDay()->diffInDays(Carbon::now()->startOfDay());
     }
 }

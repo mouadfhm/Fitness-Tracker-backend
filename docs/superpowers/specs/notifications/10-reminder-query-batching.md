@@ -183,3 +183,39 @@ instrument.
 
 A second pass at 5 users versus 50 confirms the per-run count is flat rather than merely
 smaller.
+
+### Measured
+
+Fixture of 11 users across four zones, of whom 9 are in-window; the dev database's 16
+existing users sit outside both windows and are filtered at zero query cost.
+
+| Scenario | Before | After |
+|---|---|---|
+| meal reminder | 46 | 15 |
+| workout reminder | 46 | 15 |
+| workout, Saturday | 1 | 1 |
+| meal, +5 in-window users | 70 | 20 |
+| meal, +50 in-window users | 340 | 65 |
+
+Slope from the last two rows: **6.0 queries per user before, 1.0 after**, and that
+remaining 1.0 is the `notification_logs` insert — a write, and the one thing this spec
+deliberately does not batch. Reads are flat at 7 per chunk regardless of population.
+
+The outcome tables — which users were sent to, which were skipped, and the exact `error`
+text on every skipped row — are byte-identical before and after, across all three
+scenarios. The `LocalDayWindow` grouping shows up as exactly two `select distinct
+user_id` queries, one for +05:30 (Kolkata, Colombo) and one for +05:45 (Kathmandu),
+confirming the grouping splits on offset as intended rather than collapsing to one
+window or degenerating to one per user.
+
+The single-send path was verified separately, since the harness only drives `sendBulk`:
+happy path sends and logs `sent`, missing device logs `No registered device`, quiet
+hours and a disabled preference each produce their own reason string, and
+`NotificationPreference::forUser()` still returns an unsaved defaults model that inserts
+on `save()` — the behaviour the settings controller's lazy row creation depends on.
+
+Note on running any of this: a git worktree has no `vendor/`, and pointing it at the
+main checkout's via a junction makes `autoload_psr4.php` resolve `App\` to the *main*
+checkout's `app/` — the harness then silently measures unmodified code and reports that
+nothing changed. Give the worktree its own `vendor` and `composer dump-autoload` before
+trusting a single number out of it.
