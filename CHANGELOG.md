@@ -12,8 +12,13 @@ All notable changes to the Fitness Tracker API are documented here.
 - FCM payloads now carry a `data` block with `log_id` and `type` so the app can report opens.
 - `POST /api/notifications/{log}/opened` (`auth:sanctum`) → 204. Returns 404 for logs belonging to another user, so the id is not an enumeration oracle. First tap wins; repeat taps do not move `opened_at`.
 
+- **Per-user timezone** (spec `09-per-user-timezone`). New nullable `users.timezone` column holding an IANA identifier. `POST /api/save-device-token` accepts an optional `timezone` alongside `device_token`; the app already calls it on login and on every token refresh. Values are checked against `timezone_identifiers_list()` and silently dropped if unrecognised — a bad string must not 422 the request, because that would also discard the device token and stop notifications entirely. Not in `$fillable`, so it cannot be mass-assigned via the profile endpoint.
+- `User::timezoneOrDefault()` and `User::localNow()`; `App\Services\ReminderWindow` decides whether a user's own clock is inside a reminder's send window.
+
 ### Changed
 - `AchievementService`, `SendDailyReminder` and `SendDailyMealReminder` pass their notification type.
+- **Reminders now fire on the user's local clock, not the server's.** Both commands moved from `dailyAt(...)->timezone('Africa/Casablanca')` to `everyThirtyMinutes()->withoutOverlapping()`, selecting the users whose own time reads the target — 10:00 for meals, 18:30 for workouts. Users with no reported timezone fall back to `Africa/Casablanca`, i.e. exactly the old behaviour. The 30-minute cadence and `ReminderWindow::INTERVAL_MINUTES` must stay equal, or users get two reminders a day or none; half- and quarter-hour zones (`Asia/Kolkata`, `Asia/Kathmandu`, `Pacific/Chatham`) are why this is not a plain hour comparison.
+- The "already logged today" and weekday-only checks are evaluated against the user's local day rather than the server's UTC day. Both commands now iterate users in chunks instead of pre-filtering with `whereDoesntHave`, since neither question has a single server-wide answer any more.
 
 ---
 

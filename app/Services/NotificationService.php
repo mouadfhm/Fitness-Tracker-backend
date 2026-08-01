@@ -8,6 +8,8 @@ use Kreait\Firebase\Exception\Messaging\InvalidArgument;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use App\Models\NotificationLog;
+use App\Models\NotificationPreference;
+use App\Models\User;
 use App\Models\UserDevice;
 use Throwable;
 
@@ -18,6 +20,19 @@ class NotificationService
      */
     public function sendNotification($userId, $title, $body, string $type): ?NotificationLog
     {
+        // Preferences are enforced here rather than in each command, and this is
+        // the one place worth defending. Every notification in the app already
+        // funnels through this method, so a new sender inherits the user's
+        // choices without its author having to know they exist. Put the same
+        // check in the callers instead and honouring preferences becomes a
+        // convention, which is a thing that holds until the day someone is in a
+        // hurry.
+        $suppression = $this->suppressionReason($userId, $type);
+
+        if ($suppression !== null) {
+            return $this->logSkipped($userId, $title, $body, $type, $suppression);
+        }
+
         // Written before the send because its id has to travel in the payload:
         // that is what the app posts back when the notification is tapped. The
         // status is corrected below if the send does not actually land.
@@ -95,6 +110,56 @@ class NotificationService
                 'user_id' => $userId,
                 'error' => $e->getMessage(),
             ]);
+            return null;
+        }
+    }
+
+    /**
+     * Why this send should not happen, or null to go ahead.
+     *
+     * Returns a sentence rather than a boolean because it lands in the log row's
+     * `error` column, where "Quiet hours 22:00-08:00 (Europe/Paris)" answers the
+     * support question on its own and a bare `false` starts an investigation.
+     *
+     * Fails open. The realistic failure here is the table not existing yet —
+     * code deployed a moment before its migration ran — and during that window
+     * failing open means behaving exactly as the app did yesterday. Failing
+     * closed would instead stop every notification for every user, silently,
+     * at the moment nobody is watching for it. A user's opt-out surviving a few
+     * minutes longer than it should is the smaller of those two.
+     */
+    private function suppressionReason($userId, string $type): ?string
+    {
+        try {
+            $preferences = NotificationPreference::forUser((int) $userId);
+
+            if (!$preferences->allowsType($type)) {
+                return "Disabled by user preference: {$type}";
+            }
+
+            // Quiet hours are the user's hours. Evaluating them against the
+            // server's clock would mute a user in Tokyo through their afternoon
+            // and leave them audible at 2am, which is precisely backwards.
+            $user = User::find($userId);
+            $timezone = $user ? $user->timezoneOrDefault() : User::DEFAULT_TIMEZONE;
+            $localNow = $user ? $user->localNow() : now()->setTimezone($timezone);
+
+            if ($preferences->isQuietAt($localNow)) {
+                return sprintf(
+                    'Quiet hours %s-%s (%s)',
+                    QuietHours::format($preferences->quiet_from),
+                    QuietHours::format($preferences->quiet_to),
+                    $timezone
+                );
+            }
+
+            return null;
+        } catch (Throwable $e) {
+            Log::error('Could not read notification preferences', [
+                'user_id' => $userId,
+                'error' => $e->getMessage(),
+            ]);
+
             return null;
         }
     }
