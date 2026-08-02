@@ -92,7 +92,12 @@ class MealController extends Controller
         }
         try {
             //count how many meals the user logged every days in row
-            $achievementService = new AchievementService();
+            // Resolved through the container, not `new`: AchievementService
+            // takes a NotificationService, and constructing it by hand threw
+            // ArgumentCountError on every meal logged. That is an Error, not an
+            // Exception, so the catch below never saw it and the request 500'd
+            // after the meal had already been written.
+            $achievementService = app(AchievementService::class);
             $achievementService->checkAndUnlock(Auth::user(), 'meals', 1);
             $mealDates = Auth::user()->meals()
                 ->whereDate('date', '>=', now()->subDays(30))
