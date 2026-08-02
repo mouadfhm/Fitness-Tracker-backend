@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use App\Services\EngagementService;
+use App\Services\NotificationContentService;
 use App\Services\NotificationService;
 use App\Services\ReminderWindow;
 use App\Models\NotificationLog;
@@ -14,8 +15,11 @@ class SendDailyMealReminder extends Command
     protected $signature = 'send:daily-meal-reminder';
     protected $description = 'Send meal logging reminders to users whose local time is 10:00';
 
-    private const TITLE = "🍽 Time for Your First Meal of The Day!";
-    private const BODY  = "Don't forget to follow your diet!";
+    // The copy no longer lives here. Every reminder used to send one fixed pair
+    // of sentences, which is why they were constants; now NotificationContentService
+    // decides per user and this command only decides *who*. The old text is still
+    // the fallback — see that class — so a user with nothing notable about them
+    // receives exactly what they received yesterday.
 
     // 10:00 on the user's own clock, not on the server's. The scheduler runs
     // this every 30 minutes and ReminderWindow picks out whose turn it is.
@@ -26,25 +30,31 @@ class SendDailyMealReminder extends Command
     {
         $notificationService = new NotificationService();
         $engagement = new EngagementService();
+        $content = new NotificationContentService();
 
         // One reading of the clock for the whole run. Calling now() per user
         // would let a slow batch drift across the window boundary, sending some
         // users' reminders on this run and then again on the next.
         $now = Carbon::now();
 
-        $skipped = 0;
-
-        // Collected rather than sent one at a time, then handed to sendBulk in
-        // a single call. 600 due users cost two FCM requests instead of 600.
+        // Collected rather than sent one at a time, then handed to
+        // sendPersonalized in a single call. 600 due users cost two FCM requests
+        // instead of 600, and personalized copy costs the same as generic copy
+        // because sendAll() carries a separate payload per message anyway.
         // Accumulated across chunks on purpose: batching per chunk would let a
         // chunk that happens to hold 40 due users spend a whole request on 40
         // messages.
         $due = [];
 
+        // user id => why they were held back. Collected rather than logged in
+        // the loop so that the skipped rows can carry the copy the user would
+        // actually have received, which needs the facts below to be loaded first.
+        $backedOff = [];
+
         // Chunked, and no longer pre-filtered in SQL. "Has not logged today"
         // depends on where the user is, so it cannot be a whereDoesntHave on one
         // server-side date any more — see hasLoggedToday below.
-        User::query()->chunkById(500, function ($users) use ($notificationService, $engagement, $now, &$due, &$skipped) {
+        User::query()->chunkById(500, function ($users) use ($engagement, $now, &$due, &$backedOff) {
             foreach ($users as $user) {
                 if (!ReminderWindow::isDue($user->localNow($now), self::TARGET_HOUR, self::TARGET_MINUTE)) {
                     continue;
@@ -58,14 +68,8 @@ class SendDailyMealReminder extends Command
                 // them a target. Someone who has been away three weeks hears from
                 // us every third day, not every morning.
                 if (!$engagement->dueForReminder($user->id, NotificationLog::TYPE_MEAL_REMINDER)) {
-                    $notificationService->logSkipped(
-                        $user->id,
-                        self::TITLE,
-                        self::BODY,
-                        NotificationLog::TYPE_MEAL_REMINDER,
-                        'Engagement backoff: ' . EngagementService::daysInactive($user->last_engaged_at) . ' days inactive'
-                    );
-                    $skipped++;
+                    $backedOff[$user->id] = 'Engagement backoff: '
+                        . EngagementService::daysInactive($user->last_engaged_at) . ' days inactive';
                     continue;
                 }
 
@@ -73,14 +77,37 @@ class SendDailyMealReminder extends Command
             }
         });
 
+        // One set of grouped queries for everyone this run will say anything
+        // about, held back or not, before a single line of copy is composed.
+        // Asking per user inside the loop above is the whole thing this is here
+        // to avoid: it is invisible at today's size and it is what makes the
+        // command time out at ten times it.
+        $content->prime(array_merge($due, array_keys($backedOff)), $now);
+
+        foreach ($backedOff as $userId => $reason) {
+            $copy = $content->forUser($userId, NotificationLog::TYPE_MEAL_REMINDER);
+
+            $notificationService->logSkipped(
+                $userId,
+                $copy['title'],
+                $copy['body'],
+                NotificationLog::TYPE_MEAL_REMINDER,
+                $reason
+            );
+        }
+
+        $copyByUser = [];
+
+        foreach ($due as $userId) {
+            $copyByUser[$userId] = $content->forUser($userId, NotificationLog::TYPE_MEAL_REMINDER);
+        }
+
         // Preferences, quiet hours and missing devices are still decided per
-        // user — inside sendBulk, where every other sender already gets them.
-        $result = $notificationService->sendBulk(
-            $due,
-            self::TITLE,
-            self::BODY,
-            NotificationLog::TYPE_MEAL_REMINDER
-        );
+        // user — inside sendPersonalized, where every other sender already gets
+        // them.
+        $result = $notificationService->sendPersonalized($copyByUser, NotificationLog::TYPE_MEAL_REMINDER);
+
+        $skipped = count($backedOff);
 
         $this->info(
             "Meal reminders: {$result['sent']} sent, {$result['failed']} failed, " .

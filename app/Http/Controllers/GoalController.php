@@ -70,26 +70,13 @@ class GoalController extends Controller
             ->whereDate('workout_date', today())
             ->sum('calories_burned');
 
-        // Base activity level multiplier
-        $baseActivityMultiplier = match ($user->activity_level) {
-            'sedentary' => 1.2,
-            'moderate'  => 1.4,
-            'active'    => 1.6,
-            default     => 1.2,
-        };
-
-        // Calculate BMR (Mifflin-St Jeor)
-        $bmr = 10 * $user->weight + 6.25 * $user->height - 5 * $user->age + ($user->gender === 'male' ? 5 : -161);
-
-        // Calculate TDEE with dynamic workout calories
-        $dailyCalories = ($bmr * $baseActivityMultiplier) + $workouts;
-
-        // Adjust calories based on fitness goal
-        if ($user->fitness_goal === 'weight_loss') {
-            $dailyCalories -= 500;
-        } elseif ($user->fitness_goal === 'muscle_gain') {
-            $dailyCalories += 300;
-        }
+        // BMR (Mifflin-St Jeor), the activity multiplier and the per-goal
+        // adjustment now live on the User model. They moved because the daily
+        // reminders quote this number back at the user ("480 kcal under your
+        // goal"), and a second copy of the formula would eventually disagree
+        // with this screen. Same arithmetic, one home.
+        $bmr = $user->basalMetabolicRate();
+        $dailyCalories = $user->dailyCalorieTarget((float) $workouts);
 
         // Adjust macros dynamically
         $protein = $user->weight * 2; // More protein on high workout days

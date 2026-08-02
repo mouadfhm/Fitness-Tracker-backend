@@ -22,8 +22,13 @@
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_STORE" value="array"/>
-        <!-- <env name="DB_CONNECTION" value="sqlite"/> -->
-        <!-- <env name="DB_DATABASE" value=":memory:"/> -->
+        <!-- Its own schema, because Feature tests use RefreshDatabase and this
+             is the line standing between `php artisan test` and the developer's
+             working data. The in-memory SQLite this replaces is not an option
+             here: the migrations are MySQL-shaped and pdo_sqlite is not built
+             into the PHP these run on. Create it once with
+             `CREATE DATABASE fitness_testing;` — the migrations do the rest. -->
+        <env name="DB_DATABASE" value="fitness_testing"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
