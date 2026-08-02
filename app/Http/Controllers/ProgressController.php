@@ -32,7 +32,10 @@ class ProgressController extends Controller
             'date'    => $validatedData['date'],
             'weight'  => $validatedData['weight'],
         ]);
-        $achievementService = new AchievementService();
+        // Container-resolved so its NotificationService dependency is supplied.
+        // Note there is no try/catch around this one at all, so before the fix
+        // a logged weight 500'd the request outright.
+        $achievementService = app(AchievementService::class);
         $achievementService->checkAndUnlock(Auth::user(), 'progress', 1);
         //count how many kg the user lost in total if the user objective is to lose weight
         $objective = Auth::user()->fitness_goal;

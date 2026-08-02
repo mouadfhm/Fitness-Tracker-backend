@@ -49,7 +49,10 @@ class WorkoutController extends Controller
             'workout_date'  => $validatedData['workout_date'],
         ]);
         try {
-            $achievementService = new AchievementService();
+            // Container-resolved so its NotificationService dependency is
+            // supplied; `new` here threw ArgumentCountError after the workout
+            // row was already written.
+            $achievementService = app(AchievementService::class);
             $achievementService->checkAndUnlock(Auth::user(), 'workouts', 1);
             //count how many days the user logged workouts in row
             $workoutStreak = Workout::where('user_id', Auth::id())
