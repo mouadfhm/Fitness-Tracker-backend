@@ -121,8 +121,13 @@ class NotificationService
         foreach (array_chunk($userIds, self::BATCH_SIZE) as $chunk) {
             $tokens = UserDevice::whereIn('user_id', $chunk)->pluck('device_token', 'user_id');
 
+            // The users and preferences the suppression check needs, fetched
+            // once for the chunk. Asked per user this was two SELECTs each —
+            // and one of them re-read a row the caller already had loaded.
+            $context = $this->suppressionContext($chunk);
+
             foreach ($chunk as $userId) {
-                $suppression = $this->suppressionReason($userId, $type);
+                $suppression = $this->suppressionReasonFrom($context, (int) $userId, $type);
 
                 if ($suppression !== null) {
                     $this->logSkipped($userId, $title, $body, $type, $suppression);
@@ -315,29 +320,105 @@ class NotificationService
     private function suppressionReason($userId, string $type): ?string
     {
         try {
-            $preferences = NotificationPreference::forUser((int) $userId);
-
-            if (!$preferences->allowsType($type)) {
-                return "Disabled by user preference: {$type}";
-            }
-
-            // Quiet hours are the user's hours. Evaluating them against the
-            // server's clock would mute a user in Tokyo through their afternoon
-            // and leave them audible at 2am, which is precisely backwards.
-            $user = User::find($userId);
-            $timezone = $user ? $user->timezoneOrDefault() : User::DEFAULT_TIMEZONE;
-            $localNow = $user ? $user->localNow() : now()->setTimezone($timezone);
-
-            if ($preferences->isQuietAt($localNow)) {
-                return sprintf(
-                    'Quiet hours %s-%s (%s)',
-                    QuietHours::format($preferences->quiet_from),
-                    QuietHours::format($preferences->quiet_to),
-                    $timezone
-                );
-            }
+            return $this->suppressionReasonFor(
+                User::find($userId),
+                NotificationPreference::forUser((int) $userId),
+                $type
+            );
+        } catch (Throwable $e) {
+            Log::error('Could not read notification preferences', [
+                'user_id' => $userId,
+                'error' => $e->getMessage(),
+            ]);
 
             return null;
+        }
+    }
+
+    /**
+     * The decision itself, once the two lookups have been done.
+     *
+     * Split out so the single-send and bulk paths share it rather than each
+     * carrying a copy. They are the two halves of the same rule, and a rule
+     * about what a user has opted out of is not one to let drift.
+     */
+    private function suppressionReasonFor(?User $user, NotificationPreference $preferences, string $type): ?string
+    {
+        if (!$preferences->allowsType($type)) {
+            return "Disabled by user preference: {$type}";
+        }
+
+        // Quiet hours are the user's hours. Evaluating them against the
+        // server's clock would mute a user in Tokyo through their afternoon
+        // and leave them audible at 2am, which is precisely backwards.
+        $timezone = $user ? $user->timezoneOrDefault() : User::DEFAULT_TIMEZONE;
+        $localNow = $user ? $user->localNow() : now()->setTimezone($timezone);
+
+        if ($preferences->isQuietAt($localNow)) {
+            return sprintf(
+                'Quiet hours %s-%s (%s)',
+                QuietHours::format($preferences->quiet_from),
+                QuietHours::format($preferences->quiet_to),
+                $timezone
+            );
+        }
+
+        return null;
+    }
+
+    /**
+     * Everything suppressionReasonFor needs for a whole chunk, in two queries.
+     *
+     * Returns null if either lookup failed, which the caller reads as "send to
+     * everyone in this chunk". That is the same fail-open the per-user path
+     * above has always had, widened to the chunk — see suppressionReason's note
+     * on why the realistic failure here is a missing table and why failing
+     * closed would be the worse of the two.
+     *
+     * @param  int[] $userIds
+     * @return array{users: array<int,User>, preferences: array<int,NotificationPreference>}|null
+     */
+    private function suppressionContext(array $userIds): ?array
+    {
+        try {
+            return [
+                'users' => User::whereIn('id', $userIds)->get()->keyBy('id')->all(),
+                'preferences' => NotificationPreference::forUsers($userIds),
+            ];
+        } catch (Throwable $e) {
+            Log::error('Could not read notification preferences', [
+                'user_ids' => count($userIds),
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+    }
+
+    /**
+     * suppressionReason for a user whose chunk has already been loaded.
+     *
+     * The missing-row case and the failed-lookup case are deliberately not the
+     * same thing here, because they look alike and mean opposite things. A user
+     * with no preferences row gets DEFAULTS, so their quiet hours still apply;
+     * a chunk whose lookup threw gets nothing suppressed at all. Reading the
+     * second as the first would start muting every user overnight during a
+     * deploy that landed a moment before its migration, silently.
+     *
+     * @param array{users: array<int,User>, preferences: array<int,NotificationPreference>}|null $context
+     */
+    private function suppressionReasonFrom(?array $context, int $userId, string $type): ?string
+    {
+        if ($context === null) {
+            return null;
+        }
+
+        try {
+            return $this->suppressionReasonFor(
+                $context['users'][$userId] ?? null,
+                $context['preferences'][$userId] ?? NotificationPreference::defaultFor($userId),
+                $type
+            );
         } catch (Throwable $e) {
             Log::error('Could not read notification preferences', [
                 'user_id' => $userId,
