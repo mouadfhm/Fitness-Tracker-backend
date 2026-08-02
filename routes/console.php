@@ -33,3 +33,17 @@ Schedule::command('send:daily-meal-reminder')
 Schedule::command('send:daily-reminder')
     ->everyThirtyMinutes()
     ->withoutOverlapping(10);
+
+// Hourly, not every thirty minutes, and that difference is load-bearing rather
+// than a preference. Its window is one hour wide — see
+// App\Services\SessionReminderWindow::INTERVAL_MINUTES — and the two numbers
+// have to match for the same reason the pair above do: a window wider than the
+// cadence sends twice, a narrower one sends to nobody in the zones whose offset
+// is not a whole hour. Change one and change the other in the same commit.
+//
+// The two above cannot be folded into this cadence to share it: their 30-minute
+// window is what keeps the workout reminder at 18:30 instead of rounding it to
+// the hour.
+Schedule::command('send:workout-session-reminder')
+    ->hourly()
+    ->withoutOverlapping(10);
