@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use App\Services\EngagementService;
+use App\Services\HabitualHour;
 use App\Services\NotificationContentService;
 use App\Services\NotificationService;
 use App\Services\ReminderWindow;
@@ -13,16 +14,23 @@ use App\Models\User;
 class SendDailyReminder extends Command
 {
     protected $signature = 'send:daily-reminder';
-    protected $description = 'Send workout reminders to users whose local time is 18:30 on a weekday';
+    protected $description = 'Send workout reminders to users whose local time is their habitual training hour, on a weekday';
 
     // The copy no longer lives here — NotificationContentService decides it per
     // user, and this command only decides who. The old text survives as that
     // class's fallback, which is what most users still get.
 
-    // 18:30 on the user's own clock, not on the server's. The scheduler runs
-    // this every 30 minutes and ReminderWindow picks out whose turn it is.
-    private const TARGET_HOUR   = 18;
-    private const TARGET_MINUTE = 30;
+    // 18:30 on the user's own clock, not on the server's, and only for users
+    // whose own training hour we have not learned — see App\Services\HabitualHour
+    // and users.preferred_workout_hour. The half hour is why the default is a
+    // pair rather than an hour: 18:30 is where this reminder has always been and
+    // must stay for everyone we know nothing about, while a learned hour is an
+    // hour and means :00.
+    //
+    // The scheduler runs this every 30 minutes and ReminderWindow picks out
+    // whose turn it is.
+    private const DEFAULT_HOUR   = 18;
+    private const DEFAULT_MINUTE = 30;
 
     public function handle()
     {
@@ -55,7 +63,18 @@ class SendDailyReminder extends Command
             foreach ($users as $user) {
                 $localNow = $user->localNow($now);
 
-                if (!ReminderWindow::isDue($localNow, self::TARGET_HOUR, self::TARGET_MINUTE)) {
+                // Their hour if we have one, 18:30 if not. The once-per-day
+                // guarantee on the day a user's hour moves is the engagement
+                // backoff below, which refuses a second send of a type the user
+                // has already had today — see the same note in
+                // SendDailyMealReminder.
+                [$hour, $minute] = HabitualHour::sendTime(
+                    $user->preferred_workout_hour,
+                    self::DEFAULT_HOUR,
+                    self::DEFAULT_MINUTE
+                );
+
+                if (!ReminderWindow::isDue($localNow, $hour, $minute)) {
                     continue;
                 }
 

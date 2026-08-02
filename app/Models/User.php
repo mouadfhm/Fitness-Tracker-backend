@@ -54,14 +54,27 @@ class User extends Authenticatable
     ];
 
     // Deliberately absent from $fillable: last_engaged_at is written only by
-    // EngagementObserver, and timezone only by NotificationController, which
-    // validates it against the tz database first. In $fillable a user could
-    // post either to the profile endpoint — holding themselves permanently at
-    // day 0, or storing junk that throws inside Carbon on the next scheduler
-    // run and takes the whole reminder batch down with it.
+    // EngagementObserver, timezone only by NotificationController, which
+    // validates it against the tz database first, and the two preferred_*_hour
+    // columns only by RecomputeHabitualSendHours. In $fillable a user could
+    // post any of them to the profile endpoint — holding themselves permanently
+    // at day 0, storing junk that throws inside Carbon on the next scheduler
+    // run and takes the whole reminder batch down with it, or setting their own
+    // send hour through a field that was never meant to be one. (Letting a user
+    // choose their times is spec 08's job, through the preferences endpoint,
+    // and it is out of scope here.)
+    //
+    // The hours are cast because the driver hands them back as strings and
+    // HabitualHour::isSane() compares them as ints. '8' >= 8 happens to be true
+    // in PHP, so the bug this prevents is not a wrong answer here but a string
+    // hour travelling on into ReminderWindow's arithmetic — the kind of thing
+    // that works until it does not. Nullable throughout: null means "nothing
+    // learned about this user, use the default".
     protected $casts = [
-        'email_verified_at' => 'datetime',
-        'last_engaged_at'   => 'datetime',
+        'email_verified_at'      => 'datetime',
+        'last_engaged_at'        => 'datetime',
+        'preferred_meal_hour'    => 'integer',
+        'preferred_workout_hour' => 'integer',
     ];
 
     /**

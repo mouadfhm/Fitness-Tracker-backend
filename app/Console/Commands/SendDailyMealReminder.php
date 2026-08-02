@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use App\Services\EngagementService;
+use App\Services\HabitualHour;
 use App\Services\NotificationContentService;
 use App\Services\NotificationService;
 use App\Services\ReminderWindow;
@@ -13,7 +14,7 @@ use App\Models\User;
 class SendDailyMealReminder extends Command
 {
     protected $signature = 'send:daily-meal-reminder';
-    protected $description = 'Send meal logging reminders to users whose local time is 10:00';
+    protected $description = 'Send meal logging reminders to users whose local time is their habitual logging hour';
 
     // The copy no longer lives here. Every reminder used to send one fixed pair
     // of sentences, which is why they were constants; now NotificationContentService
@@ -21,10 +22,17 @@ class SendDailyMealReminder extends Command
     // the fallback — see that class — so a user with nothing notable about them
     // receives exactly what they received yesterday.
 
-    // 10:00 on the user's own clock, not on the server's. The scheduler runs
-    // this every 30 minutes and ReminderWindow picks out whose turn it is.
-    private const TARGET_HOUR   = 10;
-    private const TARGET_MINUTE = 0;
+    // 10:00 on the user's own clock, not on the server's, and only for users
+    // we have learned nothing about. Someone who logs breakfast at 07:30 every
+    // day has either already logged by 10:00 — in which case the check below
+    // suppresses this and they hear nothing — or forgot two hours ago; they get
+    // it at their own hour instead, from users.preferred_meal_hour. See
+    // App\Services\HabitualHour and the weekly command that fills that column.
+    //
+    // The scheduler runs this every 30 minutes and ReminderWindow picks out
+    // whose turn it is.
+    private const DEFAULT_HOUR   = 10;
+    private const DEFAULT_MINUTE = 0;
 
     public function handle()
     {
@@ -56,7 +64,24 @@ class SendDailyMealReminder extends Command
         // server-side date any more — see hasLoggedToday below.
         User::query()->chunkById(500, function ($users) use ($engagement, $now, &$due, &$backedOff) {
             foreach ($users as $user) {
-                if (!ReminderWindow::isDue($user->localNow($now), self::TARGET_HOUR, self::TARGET_MINUTE)) {
+                // Their hour if we have one, 10:00 if not.
+                //
+                // Nothing here guards against a user being caught by two
+                // different windows on the day their hour moves — the backoff
+                // below already does, and it is the only check that can: it
+                // refuses to send a second reminder of a type the user has
+                // already had today, whatever hour the first one went out at.
+                // Spec 07 asks for an explicit "already sent today" check "if
+                // the once-per-day-per-type check from spec 02 is not present";
+                // it is present, so a second one would be the same query run
+                // twice.
+                [$hour, $minute] = HabitualHour::sendTime(
+                    $user->preferred_meal_hour,
+                    self::DEFAULT_HOUR,
+                    self::DEFAULT_MINUTE
+                );
+
+                if (!ReminderWindow::isDue($user->localNow($now), $hour, $minute)) {
                     continue;
                 }
 
