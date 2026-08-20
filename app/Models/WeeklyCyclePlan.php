@@ -8,6 +8,8 @@ class WeeklyCyclePlan extends Model
 {
     protected $fillable = [
         'user_id',
+        'name',
+        'description',
         'start_date',
         'weeks',
         'days_pattern',

@@ -188,4 +188,19 @@ class User extends Authenticatable
     {
         return $this->hasOne(NotificationPreference::class);
     }
+
+    /**
+     * How many days running this user has logged something.
+     *
+     * Null until their first meal or workout, which is a real state rather than
+     * an oversight: "never logged anything" and "logged, then lapsed" are
+     * different, and only the second is a broken streak. Anything reading the
+     * count should go through UserStreak::currentDaysOn(), which answers it as
+     * of a given day — the stored number is only true as of the day it was
+     * written.
+     */
+    public function streak()
+    {
+        return $this->hasOne(UserStreak::class);
+    }
 }

@@ -57,6 +57,21 @@ Schedule::command('send:workout-session-reminder')
     ->hourly()
     ->withoutOverlapping(10);
 
+// The streak save, at 20:00 on each user's own clock. Same cadence and same
+// reason as the two above: the window is 30 minutes wide, so this and
+// ReminderWindow::INTERVAL_MINUTES have to stay equal or users get two nudges an
+// evening or none at all.
+//
+// It carries no ->timezone() and no fixed time here, for the reason those do
+// not. Spec 10 asks for "one nightly command at a fixed evening hour"; the hour
+// is fixed — 20:00, in SendStreakAtRisk — and what varies is whose 20:00 it
+// currently is. Pinning the scheduler to one zone instead would send Australian
+// users their last-chance nudge in the middle of the night, several hours after
+// the streak it was meant to save had already broken.
+Schedule::command('send:streak-at-risk')
+    ->everyThirtyMinutes()
+    ->withoutOverlapping(10);
+
 // Learns what hour each user actually logs at and writes it to
 // users.preferred_meal_hour / preferred_workout_hour, which the two daily
 // commands above read. See App\Console\Commands\RecomputeHabitualSendHours.

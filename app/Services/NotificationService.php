@@ -39,6 +39,12 @@ class NotificationService
         NotificationLog::TYPE_SESSION_REMINDER => 'workouts',
         NotificationLog::TYPE_ACHIEVEMENT      => 'profile',
         NotificationLog::TYPE_WINBACK          => 'home',
+
+        // Home, because the nudge says "log anything" and home is the nutrition
+        // tracker — the shortest path from the notification to the action that
+        // saves the streak. Sending it to `foods` would quietly narrow the offer
+        // to a meal, when a workout would have done just as well.
+        NotificationLog::TYPE_STREAK_AT_RISK   => 'home',
     ];
 
     private const DEFAULT_ROUTE = 'home';

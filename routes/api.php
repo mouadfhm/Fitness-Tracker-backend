@@ -103,8 +103,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/recommendations', [RecommendationController::class, 'index']);
         // weekly workouts
         Route::get('/weekly-cycle-plans', [WeeklyCyclePlanController::class, 'index']);
+        Route::get('/weekly-cycle-plans/saved', [WeeklyCyclePlanController::class, 'savedPlans']);
         Route::post('/weekly-cycle-plans', [WeeklyCyclePlanController::class, 'store']);
+        Route::post('/weekly-cycle-plans/{id}/reuse', [WeeklyCyclePlanController::class, 'reuse']);
         Route::put('/weekly-cycle-plans/{id}', [WeeklyCyclePlanController::class, 'update']);
+        Route::get('/weekly-cycle-plans/{id}', [WeeklyCyclePlanController::class, 'show']);
+        Route::delete('/weekly-cycle-plans/{id}', [WeeklyCyclePlanController::class, 'destroy']);
     });
 
     Route::get('/user/achievements', [AchievementController::class, 'getUserAchievements']);

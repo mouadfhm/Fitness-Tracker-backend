@@ -28,6 +28,7 @@ class NotificationPreferenceController extends Controller
             'workout_reminders' => ['sometimes', 'boolean'],
             'achievements'      => ['sometimes', 'boolean'],
             'winback'           => ['sometimes', 'boolean'],
+            'streaks'           => ['sometimes', 'boolean'],
 
             // `sometimes` with `nullable` is what makes both gestures
             // expressible: omit a key to leave it alone, or send it as null to
