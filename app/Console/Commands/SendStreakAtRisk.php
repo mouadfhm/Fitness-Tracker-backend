@@ -98,7 +98,7 @@ class SendStreakAtRisk extends Command
                     // Backoff proper never fires here: an at-risk user logged
                     // yesterday, so they are one day inactive and sit in the
                     // most permissive band there is.
-                    if (!$engagement->dueForReminder($user->id, NotificationLog::TYPE_STREAK_AT_RISK)) {
+                    if (!$engagement->dueForReminder($user, NotificationLog::TYPE_STREAK_AT_RISK)) {
                         $backedOff[$user->id] = $copy;
                         continue;
                     }

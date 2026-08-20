@@ -112,7 +112,52 @@ class NotificationPreference extends Model
      */
     public static function forUser(int $userId): self
     {
-        return static::firstOrNew(['user_id' => $userId], self::DEFAULTS);
+        return static::where('user_id', $userId)->first() ?? self::defaultFor($userId);
+    }
+
+    /**
+     * The same answer for many users at once, in one query.
+     *
+     * The reminder commands ask this of every user they are about to notify.
+     * Asked one at a time that is a query per user per run, which is the cost
+     * spec 10 exists to remove.
+     *
+     * Every id asked for comes back, so callers index the result directly
+     * rather than writing their own fallback for the ones with no row — that
+     * fallback is exactly what defaultFor is.
+     *
+     * @param  int[] $userIds
+     * @return array<int,self>
+     */
+    public static function forUsers(array $userIds): array
+    {
+        if ($userIds === []) {
+            return [];
+        }
+
+        $rows = static::whereIn('user_id', $userIds)->get()->keyBy('user_id');
+
+        $preferences = [];
+
+        foreach ($userIds as $userId) {
+            $preferences[(int) $userId] = $rows[$userId] ?? self::defaultFor((int) $userId);
+        }
+
+        return $preferences;
+    }
+
+    /**
+     * What a user with no row of their own gets.
+     *
+     * Both lookups above route through here rather than each spelling out the
+     * fallback, because "no row is read as DEFAULTS" is the invariant this
+     * class promises and two copies of it is how such a promise stops being
+     * true. Unsaved on purpose: reading someone's preferences must not create
+     * a row, or the lazy creation the settings screen relies on is gone.
+     */
+    public static function defaultFor(int $userId): self
+    {
+        return new static(array_merge(['user_id' => $userId], self::DEFAULTS));
     }
 
     /**

@@ -3,11 +3,14 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use App\Services\EngagementService;
 use App\Services\HabitualHour;
+use App\Services\LocalDayWindow;
 use App\Services\NotificationContentService;
 use App\Services\NotificationService;
 use App\Services\ReminderWindow;
+use App\Models\Meal;
 use App\Models\NotificationLog;
 use App\Models\User;
 
@@ -62,37 +65,50 @@ class SendDailyMealReminder extends Command
         // Chunked, and no longer pre-filtered in SQL. "Has not logged today"
         // depends on where the user is, so it cannot be a whereDoesntHave on one
         // server-side date any more — see hasLoggedToday below.
+        // Three passes over each chunk rather than one over each user. The order
+        // of the checks is the same as when they were nested — window, then
+        // logged-today, then engagement — so the same users are dropped at the
+        // same points, and only those who reach the last one get a backoff row.
         User::query()->chunkById(500, function ($users) use ($engagement, $now, &$due, &$backedOff) {
-            foreach ($users as $user) {
-                // Their hour if we have one, 10:00 if not.
-                //
-                // Nothing here guards against a user being caught by two
-                // different windows on the day their hour moves — the backoff
-                // below already does, and it is the only check that can: it
-                // refuses to send a second reminder of a type the user has
-                // already had today, whatever hour the first one went out at.
-                // Spec 07 asks for an explicit "already sent today" check "if
-                // the once-per-day-per-type check from spec 02 is not present";
-                // it is present, so a second one would be the same query run
-                // twice.
+            // Their hour if we have one, 10:00 if not, evaluated per user since
+            // HabitualHour::sendTime depends on each user's own learned hour.
+            //
+            // Nothing here guards against a user being caught by two different
+            // windows on the day their hour moves — the backoff below already
+            // does, and it is the only check that can: it refuses to send a
+            // second reminder of a type the user has already had today,
+            // whatever hour the first one went out at. Spec 07 asks for an
+            // explicit "already sent today" check "if the once-per-day-per-type
+            // check from spec 02 is not present"; it is present, so a second
+            // one would be the same query run twice.
+            $candidates = $users->filter(function (User $user) use ($now) {
                 [$hour, $minute] = HabitualHour::sendTime(
                     $user->preferred_meal_hour,
                     self::DEFAULT_HOUR,
                     self::DEFAULT_MINUTE
                 );
 
-                if (!ReminderWindow::isDue($user->localNow($now), $hour, $minute)) {
-                    continue;
-                }
+                return ReminderWindow::isDue($user->localNow($now), $hour, $minute);
+            });
 
-                if ($this->hasLoggedToday($user, $now)) {
-                    continue;
-                }
+            if ($candidates->isEmpty()) {
+                return;
+            }
 
-                // Not logging today makes someone a candidate; it does not make
-                // them a target. Someone who has been away three weeks hears from
-                // us every third day, not every morning.
-                if (!$engagement->dueForReminder($user->id, NotificationLog::TYPE_MEAL_REMINDER)) {
+            $loggedToday = $this->loggedTodayIds($candidates, $now);
+            $candidates = $candidates->reject(fn (User $user) => isset($loggedToday[$user->id]));
+
+            if ($candidates->isEmpty()) {
+                return;
+            }
+
+            // Not logging today makes someone a candidate; it does not make
+            // them a target. Someone who has been away three weeks hears from
+            // us every third day, not every morning.
+            $decisions = $engagement->dueForReminderMany($candidates, NotificationLog::TYPE_MEAL_REMINDER);
+
+            foreach ($candidates as $user) {
+                if (!($decisions[$user->id] ?? false)) {
                     $backedOff[$user->id] = 'Engagement backoff: '
                         . EngagementService::daysInactive($user->last_engaged_at) . ' days inactive';
                     continue;
@@ -141,23 +157,36 @@ class SendDailyMealReminder extends Command
     }
 
     /**
-     * Has the user logged a meal on the day it currently is where they are?
+     * Which of these users have logged a meal on the day it currently is where
+     * they are?
      *
      * created_at is stored in UTC, so their local midnights are converted before
      * being compared against it. Reusing the old whereDate(..., today()) would
      * ask "did they log on the UTC date", which is a different day entirely for
      * anyone far enough east or west — a user in Auckland would get their 10:00
      * reminder judged against the previous day's meals.
+     *
+     * One query per distinct local day rather than one `exists` per user; see
+     * LocalDayWindow for why a chunk holds so few distinct days.
+     *
+     * @param  Collection<int,User> $candidates
+     * @return array<int,true> keyed by user id, for isset() lookup
      */
-    private function hasLoggedToday(User $user, Carbon $now): bool
+    private function loggedTodayIds(Collection $candidates, Carbon $now): array
     {
-        $localNow = $user->localNow($now);
+        $logged = [];
 
-        return $user->meals()
-            ->whereBetween('created_at', [
-                $localNow->copy()->startOfDay()->utc(),
-                $localNow->copy()->endOfDay()->utc(),
-            ])
-            ->exists();
+        foreach (LocalDayWindow::group($candidates, $now) as $window) {
+            $ids = Meal::whereIn('user_id', $window->ids())
+                ->whereBetween('created_at', [$window->start, $window->end])
+                ->distinct()
+                ->pluck('user_id');
+
+            foreach ($ids as $id) {
+                $logged[(int) $id] = true;
+            }
+        }
+
+        return $logged;
     }
 }
