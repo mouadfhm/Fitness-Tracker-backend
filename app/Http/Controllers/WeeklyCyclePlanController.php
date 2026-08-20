@@ -57,9 +57,69 @@ public function index()
     ]);
 }
 
+    /**
+     * List the authenticated user's saved cycle plans (as reusable templates),
+     * without regenerating or touching scheduled workouts.
+     */
+    public function savedPlans()
+    {
+        $plans = WeeklyCyclePlan::where('user_id', Auth::id())
+            ->orderByDesc('created_at')
+            ->get();
+
+        return response()->json(['cycle_plans' => $plans]);
+    }
+
+    public function show($id)
+    {
+        $cyclePlan = WeeklyCyclePlan::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
+
+        return response()->json(['cycle_plan' => $cyclePlan]);
+    }
+
+    public function destroy($id)
+    {
+        $cyclePlan = WeeklyCyclePlan::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
+        $cyclePlan->delete();
+
+        return response()->json(['message' => 'Cycle plan deleted']);
+    }
+
+    /**
+     * Re-apply a previously saved cycle plan starting on a new date,
+     * without requiring the user to rebuild the day-by-day pattern.
+     */
+    public function reuse(Request $request, $id)
+    {
+        $data = $request->validate([
+            'start_date' => 'required|date',
+            'weeks'      => 'sometimes|integer|min:1',
+        ]);
+
+        $source = WeeklyCyclePlan::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
+
+        $cyclePlan = WeeklyCyclePlan::create([
+            'user_id'      => Auth::id(),
+            'name'         => $source->name,
+            'description'  => $source->description,
+            'start_date'   => $data['start_date'],
+            'weeks'        => $data['weeks'] ?? $source->weeks,
+            'days_pattern' => $source->days_pattern,
+        ]);
+
+        $scheduledDates = $this->generateSchedule($cyclePlan);
+
+        return response()->json([
+            'cycle_plan'      => $cyclePlan,
+            'scheduled_dates' => $scheduledDates,
+        ], 201);
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([
+            'name'         => 'required|string|max:255',
+            'description'  => 'sometimes|nullable|string|max:2000',
             'start_date'   => 'required|date',
             'weeks'        => 'required|integer|min:1',
             'days_pattern' => 'required|array', // e.g., {"mon": 1, "tue": 2, "wed": null, "thu": 1, "fri": 2, "sat": null, "sun": null}
@@ -79,6 +139,8 @@ public function index()
     public function update(Request $request, $id)
     {
         $data = $request->validate([
+            'name'         => 'sometimes|string|max:255',
+            'description'  => 'sometimes|nullable|string|max:2000',
             'start_date'   => 'sometimes|date',
             'weeks'        => 'sometimes|integer|min:1',
             'days_pattern' => 'sometimes|array', // e.g., {"mon": 1, "tue": 2, "wed": null, "thu": 1, "fri": 2, "sat": null, "sun": null}

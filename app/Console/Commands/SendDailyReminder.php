@@ -5,7 +5,9 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use App\Services\EngagementService;
+use App\Services\HabitualHour;
 use App\Services\LocalDayWindow;
+use App\Services\NotificationContentService;
 use App\Services\NotificationService;
 use App\Services\ReminderWindow;
 use App\Models\NotificationLog;
@@ -15,34 +17,47 @@ use App\Models\Workout;
 class SendDailyReminder extends Command
 {
     protected $signature = 'send:daily-reminder';
-    protected $description = 'Send workout reminders to users whose local time is 18:30 on a weekday';
+    protected $description = 'Send workout reminders to users whose local time is their habitual training hour, on a weekday';
 
-    private const TITLE = "🏋️ Time for Your Workout!";
-    private const BODY  = "Don't forget to exercise today and stay fit!";
+    // The copy no longer lives here — NotificationContentService decides it per
+    // user, and this command only decides who. The old text survives as that
+    // class's fallback, which is what most users still get.
 
-    // 18:30 on the user's own clock, not on the server's. The scheduler runs
-    // this every 30 minutes and ReminderWindow picks out whose turn it is.
-    private const TARGET_HOUR   = 18;
-    private const TARGET_MINUTE = 30;
+    // 18:30 on the user's own clock, not on the server's, and only for users
+    // whose own training hour we have not learned — see App\Services\HabitualHour
+    // and users.preferred_workout_hour. The half hour is why the default is a
+    // pair rather than an hour: 18:30 is where this reminder has always been and
+    // must stay for everyone we know nothing about, while a learned hour is an
+    // hour and means :00.
+    //
+    // The scheduler runs this every 30 minutes and ReminderWindow picks out
+    // whose turn it is.
+    private const DEFAULT_HOUR   = 18;
+    private const DEFAULT_MINUTE = 30;
 
     public function handle()
     {
         $notificationService = new NotificationService();
         $engagement = new EngagementService();
+        $content = new NotificationContentService();
 
         // One reading of the clock for the whole run. Calling now() per user
         // would let a slow batch drift across the window boundary, sending some
         // users' reminders on this run and then again on the next.
         $now = Carbon::now();
 
-        $skipped = 0;
-
-        // Collected rather than sent one at a time, then handed to sendBulk in
-        // a single call. 600 due users cost two FCM requests instead of 600.
+        // Collected rather than sent one at a time, then handed to
+        // sendPersonalized in a single call. 600 due users cost two FCM requests
+        // instead of 600, and per-user copy costs the same as identical copy
+        // because sendAll() carries a separate payload per message anyway.
         // Accumulated across chunks on purpose: batching per chunk would let a
         // chunk that happens to hold 40 due users spend a whole request on 40
         // messages.
         $due = [];
+
+        // user id => why they were held back, logged after the facts load so the
+        // skipped rows carry the copy the user would actually have received.
+        $backedOff = [];
 
         // Chunked, and no longer pre-filtered in SQL. Both "is it a weekday"
         // and "has not logged today" depend on where the user is, so neither
@@ -51,13 +66,23 @@ class SendDailyReminder extends Command
         // of the checks is the same as when they were nested — window, weekday,
         // logged-today, engagement — so the same users are dropped at the same
         // points, and only those who reach the last one get a backoff row.
-        User::query()->chunkById(500, function ($users) use ($notificationService, $engagement, $now, &$due, &$skipped) {
-            // Costs nothing: both of these are arithmetic on columns that are
-            // already loaded.
+        User::query()->chunkById(500, function ($users) use ($engagement, $now, &$due, &$backedOff) {
+            // Their hour if we have one, 18:30 if not, evaluated per user since
+            // HabitualHour::sendTime depends on each user's own learned hour.
+            // The once-per-day guarantee on the day a user's hour moves is the
+            // engagement backoff below, which refuses a second send of a type
+            // the user has already had today — see the same note in
+            // SendDailyMealReminder.
             $candidates = $users->filter(function (User $user) use ($now) {
                 $localNow = $user->localNow($now);
 
-                if (!ReminderWindow::isDue($localNow, self::TARGET_HOUR, self::TARGET_MINUTE)) {
+                [$hour, $minute] = HabitualHour::sendTime(
+                    $user->preferred_workout_hour,
+                    self::DEFAULT_HOUR,
+                    self::DEFAULT_MINUTE
+                );
+
+                if (!ReminderWindow::isDue($localNow, $hour, $minute)) {
                     return false;
                 }
 
@@ -86,14 +111,8 @@ class SendDailyReminder extends Command
 
             foreach ($candidates as $user) {
                 if (!($decisions[$user->id] ?? false)) {
-                    $notificationService->logSkipped(
-                        $user->id,
-                        self::TITLE,
-                        self::BODY,
-                        NotificationLog::TYPE_WORKOUT_REMINDER,
-                        'Engagement backoff: ' . EngagementService::daysInactive($user->last_engaged_at) . ' days inactive'
-                    );
-                    $skipped++;
+                    $backedOff[$user->id] = 'Engagement backoff: '
+                        . EngagementService::daysInactive($user->last_engaged_at) . ' days inactive';
                     continue;
                 }
 
@@ -101,14 +120,35 @@ class SendDailyReminder extends Command
             }
         });
 
+        // One set of grouped queries for everyone this run will say anything
+        // about, held back or not, before a single line of copy is composed.
+        // Asking per user inside the loop above is exactly what this avoids.
+        $content->prime(array_merge($due, array_keys($backedOff)), $now);
+
+        foreach ($backedOff as $userId => $reason) {
+            $copy = $content->forUser($userId, NotificationLog::TYPE_WORKOUT_REMINDER);
+
+            $notificationService->logSkipped(
+                $userId,
+                $copy['title'],
+                $copy['body'],
+                NotificationLog::TYPE_WORKOUT_REMINDER,
+                $reason
+            );
+        }
+
+        $copyByUser = [];
+
+        foreach ($due as $userId) {
+            $copyByUser[$userId] = $content->forUser($userId, NotificationLog::TYPE_WORKOUT_REMINDER);
+        }
+
         // Preferences, quiet hours and missing devices are still decided per
-        // user — inside sendBulk, where every other sender already gets them.
-        $result = $notificationService->sendBulk(
-            $due,
-            self::TITLE,
-            self::BODY,
-            NotificationLog::TYPE_WORKOUT_REMINDER
-        );
+        // user — inside sendPersonalized, where every other sender already gets
+        // them.
+        $result = $notificationService->sendPersonalized($copyByUser, NotificationLog::TYPE_WORKOUT_REMINDER);
+
+        $skipped = count($backedOff);
 
         $this->info(
             "Workout reminders: {$result['sent']} sent, {$result['failed']} failed, " .

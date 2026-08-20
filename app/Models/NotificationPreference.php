@@ -32,6 +32,7 @@ class NotificationPreference extends Model
         'workout_reminders' => true,
         'achievements'      => true,
         'winback'           => true,
+        'streaks'           => true,
         'quiet_from'        => '22:00',
         'quiet_to'          => '08:00',
     ];
@@ -49,6 +50,32 @@ class NotificationPreference extends Model
         NotificationLog::TYPE_WORKOUT_REMINDER => 'workout_reminders',
         NotificationLog::TYPE_ACHIEVEMENT      => 'achievements',
         NotificationLog::TYPE_WINBACK          => 'winback',
+
+        // Scheduled-session reminders share the workout toggle rather than
+        // getting one of their own. Two arguments settled it. The first is what
+        // the switch means to the person reading it: someone who turned off
+        // "Workout reminders" has said they do not want the phone raising
+        // workouts with them, and a second workout notification that keeps
+        // arriving because it is technically a different type is how an app
+        // gets muted at the OS level — the failure 00-index.md warns about, and
+        // not one that is undone by a later apology. The second is that
+        // allowsType() lets an unmapped type through unconditionally, so
+        // *omitting* this line would not defer the decision, it would make the
+        // notification impossible to switch off.
+        //
+        // The cost is that the two cannot be tuned apart. If their open rates
+        // turn out as different as this feature assumes, that is worth
+        // revisiting with a real column, a migration, and a row on the settings
+        // screen.
+        NotificationLog::TYPE_SESSION_REMINDER => 'workout_reminders',
+
+        // A toggle of its own, unlike the session reminder above, and for the
+        // reason that decided that one the other way: what the switch means to
+        // the person reading it. Someone who turned off "Meal reminders" has
+        // said they do not want to be told to eat; they have not said they want
+        // to lose a streak silently. The two notifications make different
+        // offers, so they get different switches.
+        NotificationLog::TYPE_STREAK_AT_RISK   => 'streaks',
     ];
 
     protected $fillable = [
@@ -57,6 +84,7 @@ class NotificationPreference extends Model
         'workout_reminders',
         'achievements',
         'winback',
+        'streaks',
         'quiet_from',
         'quiet_to',
     ];
@@ -66,6 +94,7 @@ class NotificationPreference extends Model
         'workout_reminders' => 'boolean',
         'achievements'      => 'boolean',
         'winback'           => 'boolean',
+        'streaks'           => 'boolean',
     ];
 
     public function user()
@@ -171,6 +200,7 @@ class NotificationPreference extends Model
             'workout_reminders' => (bool) $this->workout_reminders,
             'achievements'      => (bool) $this->achievements,
             'winback'           => (bool) $this->winback,
+            'streaks'           => (bool) $this->streaks,
             'quiet_from'        => QuietHours::format($this->quiet_from),
             'quiet_to'          => QuietHours::format($this->quiet_to),
         ];

@@ -13,6 +13,20 @@ class NotificationLog extends Model
     public const TYPE_ACHIEVEMENT      = 'achievement';
     public const TYPE_WINBACK          = 'winback';
 
+    // Separate from TYPE_WORKOUT_REMINDER, which is the unconditional 18:30
+    // nag. This one names a session the user themselves put in the calendar,
+    // and the whole reason for splitting the type is that their open rates
+    // should differ enormously. If they turn out not to, the premise of the
+    // feature is wrong and this table is where that becomes visible.
+    public const TYPE_SESSION_REMINDER = 'session_reminder';
+
+    // The one notification in the app that is not asking for a behaviour but
+    // defending one the user already has. Its own type because its open rate is
+    // the measurement the whole streak feature stands on: if loss aversion works
+    // it should beat every other type here, and if it does not, the mechanic is
+    // not earning the notification and this table is where that shows.
+    public const TYPE_STREAK_AT_RISK = 'streak_at_risk';
+
     // Outcomes. `skipped` means we never attempted a send (no registered
     // device); `failed` means FCM rejected it.
     public const STATUS_SENT    = 'sent';

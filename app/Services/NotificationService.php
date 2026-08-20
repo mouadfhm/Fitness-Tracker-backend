@@ -21,9 +21,39 @@ class NotificationService
     private const BATCH_SIZE = 500;
 
     /**
-     * @param string $type One of the NotificationLog::TYPE_* constants.
+     * Which screen a tapped notification of each type should open.
+     *
+     * The app has read `data['route']` since spec 03 shipped on the Flutter side
+     * — see NavigationService.deepLinkTarget — but nothing here ever wrote it,
+     * so every tap fell through to "open wherever you were". The values are the
+     * four route keys that map to real screens; anything else the app resolves
+     * to home rather than dropping the tap, so a typo here is survivable.
+     *
+     * A sender may override this per message (see sendPersonalized): copy that
+     * names a weigh-in should land on the screen with the weigh-in on it, not on
+     * whichever screen its notification type usually points at.
      */
-    public function sendNotification($userId, $title, $body, string $type): ?NotificationLog
+    private const ROUTES = [
+        NotificationLog::TYPE_MEAL_REMINDER    => 'foods',
+        NotificationLog::TYPE_WORKOUT_REMINDER => 'workouts',
+        NotificationLog::TYPE_SESSION_REMINDER => 'workouts',
+        NotificationLog::TYPE_ACHIEVEMENT      => 'profile',
+        NotificationLog::TYPE_WINBACK          => 'home',
+
+        // Home, because the nudge says "log anything" and home is the nutrition
+        // tracker — the shortest path from the notification to the action that
+        // saves the streak. Sending it to `foods` would quietly narrow the offer
+        // to a meal, when a workout would have done just as well.
+        NotificationLog::TYPE_STREAK_AT_RISK   => 'home',
+    ];
+
+    private const DEFAULT_ROUTE = 'home';
+
+    /**
+     * @param string $type One of the NotificationLog::TYPE_* constants.
+     * @param string|null $route Overrides the default screen for this type.
+     */
+    public function sendNotification($userId, $title, $body, string $type, ?string $route = null): ?NotificationLog
     {
         // Preferences are enforced here rather than in each command, and this is
         // the one place worth defending. Every notification in the app already
@@ -49,10 +79,7 @@ class NotificationService
             return $log;
         }
 
-        $data = ['type' => $type];
-        if ($log) {
-            $data['log_id'] = (string) $log->id;
-        }
+        $data = $this->dataBlock($type, $route, $log);
 
         try {
             app('firebase')->send($this->buildMessage($device->device_token, $title, $body, $data));
@@ -94,9 +121,10 @@ class NotificationService
      * same FCM batch endpoint — one HTTP call per 500 either way — and each
      * message keeps its own data.
      *
-     * Per-user copy still belongs in sendNotification(). The two paths coexist
-     * on purpose: this one is for broadcast text, that one for text that names
-     * the person.
+     * Kept as the front door for broadcast copy, but it is now a special case of
+     * sendPersonalized() below — the same text for everybody — rather than a
+     * separate path. One implementation means the preference, quiet-hours and
+     * stale-token handling below cannot come to differ between the two.
      *
      * @param  int[] $userIds
      * @param  string $type One of the NotificationLog::TYPE_* constants.
@@ -104,13 +132,40 @@ class NotificationService
      */
     public function sendBulk(array $userIds, string $title, string $body, string $type): array
     {
+        $copy = [];
+
+        foreach (array_unique(array_map('intval', $userIds)) as $userId) {
+            $copy[$userId] = ['title' => $title, 'body' => $body];
+        }
+
+        return $this->sendPersonalized($copy, $type);
+    }
+
+    /**
+     * Send many users a notification each, with its own copy, in batched calls.
+     *
+     * Spec 06 says personalized copy "cannot use sendMulticast" and must fall
+     * back to sending one at a time. The first half is true and the second no
+     * longer follows, because sendBulk() never used multicast in the first place
+     * — see the note above. `sendAll()` takes an array of complete, independent
+     * messages, so copy that names the person costs exactly what broadcast copy
+     * costs: one HTTP call per 500 users. Dropping to per-user sends here would
+     * have given up spec 04's batching on the app's two highest-volume
+     * notifications in exchange for nothing.
+     *
+     * @param array<int,array{title:string,body:string,route?:string}> $copyByUserId
+     * @param string $type One of the NotificationLog::TYPE_* constants.
+     * @return array{sent:int,failed:int,skipped:int}
+     */
+    public function sendPersonalized(array $copyByUserId, string $type): array
+    {
         $result = ['sent' => 0, 'failed' => 0, 'skipped' => 0];
 
-        $userIds = array_values(array_unique(array_map('intval', $userIds)));
-
-        if ($userIds === []) {
+        if ($copyByUserId === []) {
             return $result;
         }
+
+        $userIds = array_map('intval', array_keys($copyByUserId));
 
         // Two passes. Suppressed users and users with no device are decided and
         // logged first so that the batches which do go out are full ones: a
@@ -127,6 +182,9 @@ class NotificationService
             $context = $this->suppressionContext($chunk);
 
             foreach ($chunk as $userId) {
+                $title = $copyByUserId[$userId]['title'];
+                $body  = $copyByUserId[$userId]['body'];
+
                 $suppression = $this->suppressionReasonFrom($context, (int) $userId, $type);
 
                 if ($suppression !== null) {
@@ -148,7 +206,7 @@ class NotificationService
         }
 
         foreach (array_chunk($recipients, self::BATCH_SIZE, true) as $batch) {
-            $this->sendBatch($batch, $title, $body, $type, $result);
+            $this->sendBatch($batch, $copyByUserId, $type, $result);
         }
 
         return $result;
@@ -158,9 +216,10 @@ class NotificationService
      * One FCM call for up to BATCH_SIZE recipients.
      *
      * @param array<int,string> $recipients user id => device token
+     * @param array<int,array{title:string,body:string,route?:string}> $copyByUserId
      * @param array{sent:int,failed:int,skipped:int} $result
      */
-    private function sendBatch(array $recipients, string $title, string $body, string $type, array &$result): void
+    private function sendBatch(array $recipients, array $copyByUserId, string $type, array &$result): void
     {
         $messages = [];
 
@@ -171,12 +230,12 @@ class NotificationService
         $logsByToken = [];
 
         foreach ($recipients as $userId => $token) {
+            $title = $copyByUserId[$userId]['title'];
+            $body  = $copyByUserId[$userId]['body'];
+
             $log = $this->openLog($userId, $title, $body, $type);
 
-            $data = ['type' => $type];
-            if ($log) {
-                $data['log_id'] = (string) $log->id;
-            }
+            $data = $this->dataBlock($type, $copyByUserId[$userId]['route'] ?? null, $log);
 
             try {
                 $messages[] = $this->buildMessage($token, $title, $body, $data);
@@ -248,6 +307,28 @@ class NotificationService
             Log::info('Dropping stale FCM tokens', ['count' => count($stale)]);
             UserDevice::whereIn('device_token', $stale)->delete();
         }
+    }
+
+    /**
+     * The FCM `data` block: everything the app needs that is not the visible text.
+     *
+     * `log_id` is what the app posts back on a tap (spec 01) and `route` is the
+     * screen that tap should land on (spec 03). Both are strings because FCM's
+     * data payload is string-to-string and an int would arrive as one anyway,
+     * having been converted somewhere neither end controls.
+     */
+    private function dataBlock(string $type, ?string $route, ?NotificationLog $log): array
+    {
+        $data = [
+            'type'  => $type,
+            'route' => $route ?? self::ROUTES[$type] ?? self::DEFAULT_ROUTE,
+        ];
+
+        if ($log) {
+            $data['log_id'] = (string) $log->id;
+        }
+
+        return $data;
     }
 
     /**

@@ -4,7 +4,23 @@ All notable changes to the Fitness Tracker API are documented here.
 
 ---
 
-## [Unreleased] — 2026-07-31
+## [Unreleased] — 2026-08-02
+
+### Added
+- **Scheduled-workout reminders** (spec `05-scheduled-workout-reminders`). New `send:workout-session-reminder` command, scheduled hourly, reminds users about sessions they put in their own calendar: *"🏋️ Leg Day in an hour — Your plan says squats, leg press, calf raises."* Logged under the new type `NotificationLog::TYPE_SESSION_REMINDER`.
+- New nullable `scheduled_workouts.reminded_at` column, with a `(reminded_at, scheduled_at)` index, guaranteeing at most one reminder per scheduled session however often the scheduler fires.
+- `App\Services\SessionReminderWindow` decides when a session's reminder is due. Its `INTERVAL_MINUTES` (60) and the command's `->hourly()` must stay equal, for the same reason as the two commands above.
+
+### Where this departs from the spec, and why
+- The spec asks for a reminder 30–90 minutes before the session. That is implemented and applies to any row carrying a real time. **No such row exists today**: the app has only ever shown a date picker (`workout_details_screen.dart`, `new_workout_cycle_screen.dart`), and `WeeklyCyclePlanController::generateSchedule` materialises cycle plans at midnight, so all 194 production rows sit at 00:00 or 01:00. Read literally, the rule would have fired every reminder at about 22:30 the night before, where spec 08's default quiet window (22:00–08:00) would then have swallowed most of it. A session timed before 04:00 is therefore treated as date-only and reminded at 08:00 local on the day itself, worded *"Leg Day today"*. Add a time picker and the 30–90 minute path starts applying on its own.
+- The spec's "expand weekly cycle plans into concrete dates" step was already done: `WeeklyCyclePlanController` writes real `scheduled_workouts` rows on save and on update, so the command reads one table.
+- "Already logged" is checked against **both** `workout_logs` (the v2 table the spec names, currently empty and written by nothing) and the v1 `workouts` table, which is where completions actually land via `/api/workouts/add`.
+- The engagement backoff deliberately does **not** apply. It exists to thin out reminders with nothing to say beyond "you did not log today"; this one repeats back a commitment the user made, which is precisely the reminder worth sending to someone who has drifted. Volume is bounded by `reminded_at` instead.
+- Session reminders are governed by the existing **workout reminders** toggle rather than a new one. `NotificationPreference::allowsType()` lets unmapped types through unconditionally, so omitting the mapping would have shipped a notification nobody could switch off.
+
+---
+
+## 2026-07-31
 
 ### Added
 - **Notification send & open logging** (spec `01-send-open-logging`). New `notification_logs` table records every notification with its type, title, body, outcome and `sent_at`, plus `opened_at` once the user taps it. Composite index on `(user_id, type, sent_at)`.
