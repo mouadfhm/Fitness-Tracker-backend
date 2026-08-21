@@ -7,19 +7,17 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    # Runs directly on the homelab box (see /srv/homelab/actions-runner), so
+    # this executes the steps below locally instead of SSHing in from
+    # GitHub's cloud runners — which can't reach a LAN-only host anyway.
+    runs-on: [self-hosted, homelab]
     steps:
-      - name: Deploy to Oracle Cloud
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          script: |
-            cd ~/apps/fitness-backend
-            git pull origin main
-            cd ~/apps
-            docker compose up -d --build fitness-backend
-            docker compose exec -T fitness-backend php artisan migrate --force
-            docker compose exec -T fitness-backend php artisan config:cache
-            docker compose exec -T fitness-backend php artisan route:cache
+      - name: Deploy
+        run: |
+          cd /srv/homelab/Fitness-Tracker-backend
+          git pull origin main
+          cd /srv/homelab
+          docker compose up -d --build fitness-app
+          docker compose exec -T fitness-app php artisan migrate --force
+          docker compose exec -T fitness-app php artisan config:cache
+          docker compose exec -T fitness-app php artisan route:cache
