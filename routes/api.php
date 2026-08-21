@@ -89,6 +89,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/custom-workouts/{id}', [CustomWorkoutController::class, 'show']);
         Route::post('/custom-workouts', [CustomWorkoutController::class, 'store']);
         Route::put('/custom-workouts/{id}', [CustomWorkoutController::class, 'update']);
+        Route::delete('/custom-workouts/{id}', [CustomWorkoutController::class, 'destroy']);
 
         // Logging workouts
         Route::get('/workout-logs', [WorkoutLogController::class, 'index']);

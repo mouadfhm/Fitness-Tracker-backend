@@ -85,4 +85,12 @@ class CustomWorkoutController extends Controller
         return response()->json($workout);
     }
 
+    // DELETE /api/custom-workouts/{id} - delete a custom workout
+    public function destroy($id)
+    {
+        $workout = CustomWorkout::where('user_id', Auth::id())->findOrFail($id);
+        $workout->delete();
+        return response()->json(['message' => 'Custom workout deleted']);
+    }
+
 }
