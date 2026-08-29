@@ -98,7 +98,11 @@ public function index()
 
         $source = WeeklyCyclePlan::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
 
-        $cyclePlan = WeeklyCyclePlan::create([
+        // Build an in-memory (unsaved) plan to drive schedule generation — reusing
+        // a plan should only create ScheduledWorkout rows, not a duplicate saved
+        // cycle plan, otherwise the source plan gets cloned into the saved list
+        // every time it's reused.
+        $cyclePlan = new WeeklyCyclePlan([
             'user_id'      => Auth::id(),
             'name'         => $source->name,
             'description'  => $source->description,
@@ -110,7 +114,7 @@ public function index()
         $scheduledDates = $this->generateSchedule($cyclePlan);
 
         return response()->json([
-            'cycle_plan'      => $cyclePlan,
+            'cycle_plan'      => $source,
             'scheduled_dates' => $scheduledDates,
         ], 201);
     }
