@@ -13,41 +13,71 @@ class ExerciseSeeder extends Seeder
      */
     public function run(): void
     {
-        //
-        $filePath = [database_path('data/exercise_dataset.csv')]; // Path to CSV
-        foreach ($filePath as $filePath) {
-            if (!file_exists($filePath)) {
-                $this->command->error("CSV file not found at $filePath");
-                return;
-            }
+        $filePath = database_path('data/exercise_dataset.csv');
+        $translationsPath = database_path('data/exercises_translated.csv');
 
-            $file = fopen($filePath, "r");
-            $isFirstRow = true;
-
-            while (($row = fgetcsv($file, 1000, ",")) !== FALSE) {
-                if ($isFirstRow) {
-                    $isFirstRow = false; // Skip CSV header
-                    continue;
-                }
-
-                // Check if the food already exists by its name (or other unique field)
-                if (Exercise::where('name', explode(',', $row[0])[0])->where('description',$row[0])->exists()) {
-                    $this->command->info("Skipping duplicate Exercise: " . explode(',', $row[0])[0]);
-                    continue;  // Skip the duplicate food
-                }
-
-                // Insert the food if not a duplicate
-                Exercise::create([
-                    'name' => explode(',', $row[0])[0],
-                    'description' => $row[0],
-                    'duration' => '1 hour',
-                    'caloriesPerKg' => $row[5],
-                ]);    
-            }
-
-            fclose($file);
-            $this->command->info('Exercise table seeded successfully from CSV!');
+        if (!file_exists($filePath)) {
+            $this->command->error("CSV file not found at $filePath");
+            return;
         }
 
+        $translations = $this->loadTranslations($translationsPath);
+
+        $file = fopen($filePath, "r");
+        $isFirstRow = true;
+        $created = 0;
+        $skipped = 0;
+
+        while (($row = fgetcsv($file, 1000, ",")) !== FALSE) {
+            if ($isFirstRow) {
+                $isFirstRow = false; // Skip CSV header
+                continue;
+            }
+
+            // Use the full activity description as the name (was previously
+            // truncated at the first comma, e.g. "Running" for 16 different
+            // running variants — not distinguishable in a list).
+            $name = trim($row[0]);
+
+            if ($name === '' || Exercise::where('name', $name)->exists()) {
+                $skipped++;
+                continue;
+            }
+
+            Exercise::create([
+                'name' => $name,
+                'name_fr' => $translations[strtolower($name)] ?? null,
+                'description' => $name,
+                'duration' => '1 hour',
+                'caloriesPerKg' => $row[5],
+            ]);
+            $created++;
+        }
+
+        fclose($file);
+        $this->command->info("Exercise table seeded: {$created} created, {$skipped} skipped (duplicates/empty).");
+    }
+
+    /**
+     * @return array<string, string> lowercase name => French translation
+     */
+    protected function loadTranslations(string $path): array
+    {
+        if (!is_file($path)) {
+            $this->command->warn("No translations file at {$path}, seeding without name_fr.");
+            return [];
+        }
+
+        $translations = [];
+        $handle = fopen($path, 'r');
+        fgetcsv($handle);
+        while (($fields = fgetcsv($handle)) !== false) {
+            if (($fields[1] ?? '') !== '') {
+                $translations[strtolower($fields[0])] = $fields[1];
+            }
+        }
+        fclose($handle);
+
+        return $translations;
     }
 }

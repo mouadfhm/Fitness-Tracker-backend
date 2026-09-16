@@ -9,109 +9,45 @@ class FoodSeeder extends Seeder
 {
     public function run()
     {
-        $filePaths = [
-            // database_path('data/csv_result.csv'),
-            database_path('data/ABBREV.csv'),
-            // Add more file paths as needed
-        ];
+        $filePath = database_path('data/foods_translated.csv');
 
-        foreach ($filePaths as $filePath) {
-            $lines = file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-            if ($filePath == database_path('data/ABBREV.csv')) {
-                // Remove the header row (first line) since your CSV already has column names
-                $header = array_shift($lines);
+        if (!is_file($filePath)) {
+            $this->command->error(
+                "Missing {$filePath}. Run `php artisan foods:translate` first to generate it."
+            );
 
-                foreach ($lines as $line) {
-                    $line = trim($line);
-
-                    // Parse the CSV line
-                    $row = str_getcsv($line, ',');
-
-                    // Clean any surrounding quotes from each field
-                    $row = array_map(function ($value) {
-                        return trim($value, " '");
-                    }, $row);
-
-                    // Convert "t" (trace amounts) to null if needed
-                    $fields = array_map(function ($field) {
-                        return ($field === 't') ? null : $field;
-                    }, $row);
-
-                    // Check for duplicate food entries based on the 'name' field (index 1)
-                    if (Food::where('name', $fields[2])->exists()) {
-                        $this->command->info("Skipping duplicate food: " . $fields[2]);
-                        continue;  // Skip the duplicate food
-                    }
-
-                    // Make sure required fields are available:
-                    // In your CSV:
-                    // index 1: name
-                    // index 3: calories
-                    // index 4: total_fat
-                    // index 5: carbohydrate
-                    // index 6: protein
-                    if (isset($fields[1], $fields[3], $fields[4], $fields[5], $fields[6])) {
-                        Food::create([
-                            'name'     => $fields[2],
-                            'calories' => (float) $fields[4],
-                            // Remove 'g' from nutrient values and convert to float
-                            'fats'     => (float) $fields[45] + (float) $fields[46] + (float) $fields[47],
-                            'carbs'    => (float) $fields[8],
-                            'protein'  => (float) $fields[5]
-                        ]);
-                    } else {
-                        $this->command->warn("Skipping row due to missing data: " . implode(',', $fields[2]));
-                    }
-                }
-            }elseif($filePath == database_path('data/csv_result.csv')) {
-                // Remove the header row (first line) since your CSV already has column names
-                $header = array_shift($lines);
-
-                foreach ($lines as $line) {
-                    $line = trim($line);
-
-                    // Parse the CSV line
-                    $row = str_getcsv($line, ',');
-
-                    // Clean any surrounding quotes from each field
-                    $row = array_map(function ($value) {
-                        return trim($value, " '");
-                    }, $row);
-
-                    // Convert "t" (trace amounts) to null if needed
-                    $fields = array_map(function ($field) {
-                        return ($field === 't') ? null : $field;
-                    }, $row);
-
-                    // Check for duplicate food entries based on the 'name' field (index 1)
-                    if (Food::where('name', $fields[1])->exists()) {
-                        $this->command->info("Skipping duplicate food: " . $fields[1]);
-                        continue;  // Skip the duplicate food
-                    }
-
-                    // Make sure required fields are available:
-                    // In your CSV:
-                    // index 1: name
-                    // index 3: calories
-                    // index 4: total_fat
-                    // index 5: carbohydrate
-                    // index 6: protein
-                    if (isset($fields[1], $fields[3], $fields[4], $fields[5], $fields[6])) {
-                        Food::create([
-                            'name'     => $fields[1],
-                            'calories' => (float) $fields[3],
-                            // Remove 'g' from nutrient values and convert to float
-                            'fats'     => (float) str_replace('g', '', $fields[4]),
-                            'carbs'    => (float) str_replace('g', '', $fields[5]),
-                            'protein'  => (float) str_replace('g', '', $fields[6])
-                        ]);
-                    } else {
-                        $this->command->warn("Skipping row due to missing data: " . implode(',', $fields));
-                    }
-                }
-            }
+            return;
         }
 
-        $this->command->info('Foods table seeded successfully from CSV!');
+        $handle = fopen($filePath, 'r');
+        $header = fgetcsv($handle);
+        $index = array_flip($header);
+
+        $created = 0;
+        $skipped = 0;
+
+        while (($fields = fgetcsv($handle)) !== false) {
+            $nameEn = $fields[$index['name_en']] ?? '';
+
+            if ($nameEn === '' || Food::where('name', $nameEn)->exists()) {
+                $skipped++;
+                continue;
+            }
+
+            Food::create([
+                'name' => $nameEn,
+                'name_en' => $nameEn,
+                'name_fr' => $fields[$index['name_fr']] ?? null,
+                'source_name' => $fields[$index['source_name']] ?? null,
+                'calories' => (float) ($fields[$index['calories']] ?? 0),
+                'protein' => (float) ($fields[$index['protein']] ?? 0),
+                'carbs' => (float) ($fields[$index['carbs']] ?? 0),
+                'fats' => (float) ($fields[$index['fats']] ?? 0),
+            ]);
+            $created++;
+        }
+        fclose($handle);
+
+        $this->command->info("Foods table seeded: {$created} created, {$skipped} skipped (duplicates/empty).");
     }
 }

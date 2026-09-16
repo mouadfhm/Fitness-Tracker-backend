@@ -28,6 +28,8 @@ class FoodController extends Controller
             ->select(
                 'foods.id',
                 'foods.name',
+                'foods.name_en',
+                'foods.name_fr',
                 'foods.calories',
                 'foods.protein',
                 'foods.carbs',
