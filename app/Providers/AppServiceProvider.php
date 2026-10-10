@@ -8,6 +8,9 @@ use App\Models\Workout;
 use App\Models\WorkoutLog;
 use App\Observers\EngagementObserver;
 use App\Observers\StreakObserver;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -65,5 +68,35 @@ class AppServiceProvider extends ServiceProvider
         foreach (self::STREAK_MODELS as $model) {
             $model::observe(StreakObserver::class);
         }
+
+        $this->configureRateLimiting();
+    }
+
+    /**
+     * Limits for the unauthenticated auth endpoints. Per email as well as per
+     * IP for the ones that take an email, so one account can't be hammered
+     * from many addresses and one address can't sweep many accounts.
+     */
+    private function configureRateLimiting(): void
+    {
+        $email = fn (Request $request) => strtolower((string) $request->input('email'));
+
+        RateLimiter::for('login', fn (Request $request) => [
+            Limit::perMinute(5)->by('login:'.$email($request).'|'.$request->ip()),
+            Limit::perMinute(20)->by('login-ip:'.$request->ip()),
+        ]);
+
+        RateLimiter::for('register', fn (Request $request) => [
+            Limit::perMinute(5)->by('register-ip:'.$request->ip()),
+        ]);
+
+        RateLimiter::for('forgot-password', fn (Request $request) => [
+            Limit::perMinute(1)->by('forgot:'.$email($request)),
+            Limit::perHour(10)->by('forgot-ip:'.$request->ip()),
+        ]);
+
+        RateLimiter::for('reset-password', fn (Request $request) => [
+            Limit::perMinute(10)->by('reset-ip:'.$request->ip()),
+        ]);
     }
 }

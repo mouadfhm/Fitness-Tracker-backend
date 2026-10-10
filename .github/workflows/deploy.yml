@@ -6,7 +6,12 @@ on:
       - main
 
 jobs:
+  tests:
+    uses: ./.github/workflows/tests.yml
+
   deploy:
+    # Only ship code whose tests pass.
+    needs: tests
     # Runs directly on the homelab box (see /srv/homelab/actions-runner), so
     # this executes the steps below locally instead of SSHing in from
     # GitHub's cloud runners — which can't reach a LAN-only host anyway.
@@ -15,7 +20,9 @@ jobs:
       - name: Deploy
         run: |
           cd /srv/homelab/Fitness-Tracker-backend
-          git pull origin main
+          # --ff-only: stop instead of merging if the server checkout has
+          # drifted from main.
+          git pull --ff-only origin main
           cd /srv/homelab
           docker compose up -d --build fitness-app
           docker compose exec -T fitness-app php artisan migrate --force

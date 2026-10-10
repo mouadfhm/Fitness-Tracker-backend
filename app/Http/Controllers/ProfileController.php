@@ -42,7 +42,7 @@ class ProfileController extends Controller
                     'weight'  => $validatedData['weight'],
                 ]);
             } catch (\Exception $e) {
-                return response()->json(['error' => $e->getMessage()], 500);
+                return $this->serverError($e, 'error', 500);
             }
         }
 
@@ -54,7 +54,7 @@ class ProfileController extends Controller
                 'progress' => $progress,
             ]);
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return $this->serverError($e, 'error', 500);
         }
     }
 
@@ -76,7 +76,7 @@ class ProfileController extends Controller
             });
             return response()->json(['message' => 'Account and data deleted.']);
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return $this->serverError($e, 'error', 500);
         }
     }
 }

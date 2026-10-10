@@ -83,7 +83,7 @@ class WorkoutController extends Controller
             $caloriesBurned = Workout::where('user_id', Auth::id())->sum('calories_burned');
             $achievementService->checkAndUnlock(Auth::user(), 'calories', $caloriesBurned);
         } catch (Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return $this->serverError($e, 'error', 500);
         }
         return response()->json([
             'message' => 'Workout logged successfully.',
