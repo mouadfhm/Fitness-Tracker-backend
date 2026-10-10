@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Food;
+use App\Support\FoodNameCleaner;
 use Illuminate\Database\Seeder;
 
 class FoodSeeder extends Seeder
@@ -27,7 +28,11 @@ class FoodSeeder extends Seeder
         $skipped = 0;
 
         while (($fields = fgetcsv($handle)) !== false) {
-            $nameEn = $fields[$index['name_en']] ?? '';
+            // Re-clean from the USDA name so newer abbreviation expansions
+            // apply without regenerating the CSV.
+            $sourceName = $fields[$index['source_name']] ?? '';
+            $nameEn = ($sourceName !== '' ? FoodNameCleaner::clean($sourceName) : '')
+                ?: ($fields[$index['name_en']] ?? '');
 
             if ($nameEn === '' || Food::where('name', $nameEn)->exists()) {
                 $skipped++;

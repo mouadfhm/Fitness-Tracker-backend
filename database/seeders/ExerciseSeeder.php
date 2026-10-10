@@ -49,7 +49,9 @@ class ExerciseSeeder extends Seeder
                 'name_fr' => $translations[strtolower($name)] ?? null,
                 'description' => $name,
                 'duration' => '1 hour',
-                'caloriesPerKg' => $row[5],
+                // Column 5 ("Calories per kg") divides by pounds twice; work
+                // it out from the 130 lb (58.97 kg) column instead.
+                'caloriesPerKg' => (float) $row[1] / (130 * 0.45359237),
             ]);
             $created++;
         }
