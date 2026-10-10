@@ -16,7 +16,7 @@ class AuthController extends Controller
             $validatedData = $request->validate([
                 'name'          => 'required|string|max:255',
                 'email'         => 'required|email|unique:users',
-                'password'      => 'required|string|min:6|confirmed',
+                'password'      => 'required|string|min:8|confirmed',
                 'age'           => 'nullable|integer',
                 'weight'        => 'nullable|numeric',
                 'height'        => 'nullable|numeric',
@@ -50,7 +50,7 @@ class AuthController extends Controller
                 'user'         => $user,
             ], 201);
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
+            return $this->serverError($e, 'message', 500);
         }
     }
 

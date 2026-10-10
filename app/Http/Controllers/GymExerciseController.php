@@ -54,7 +54,7 @@ class GymExerciseController extends Controller
 
             return response()->json(['gym_exercises' => $results]);
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return $this->serverError($e, 'error', 500);
         }
     }
 }

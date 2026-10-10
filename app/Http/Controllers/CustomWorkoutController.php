@@ -21,7 +21,7 @@ class CustomWorkoutController extends Controller
             $customWorkout->gym_exercises()->attach($this->pivotData($data['gym_exercises']));
             return response()->json($customWorkout, 201);
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return $this->serverError($e, 'error', 500);
         }
     }
     // PUT /api/custom-workouts/{id} - update a custom workout
@@ -37,7 +37,7 @@ class CustomWorkoutController extends Controller
             $customWorkout->gym_exercises()->sync($this->pivotData($data['gym_exercises']));
             return response()->json($customWorkout, 200);
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return $this->serverError($e, 'error', 500);
         }
     }
 

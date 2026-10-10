@@ -18,12 +18,17 @@ use App\Http\Controllers\GymExerciseController;
 use App\Http\Controllers\ScheduledWorkoutController;
 use App\Http\Controllers\WorkoutLogController;
 use App\Http\Controllers\WeeklyCyclePlanController;
+use App\Http\Controllers\PasswordResetController;
 
 
 
 
-Route::post('register', [AuthController::class, 'register']);
-Route::post('login', [AuthController::class, 'login']);
+// Throttled by the limiters in AppServiceProvider; without them anyone could
+// try passwords or reset codes endlessly.
+Route::post('register', [AuthController::class, 'register'])->middleware('throttle:register');
+Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login');
+Route::post('forgot-password', [PasswordResetController::class, 'sendCode'])->middleware('throttle:forgot-password');
+Route::post('reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:reset-password');
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {

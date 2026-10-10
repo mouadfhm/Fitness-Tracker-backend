@@ -1,0 +1,59 @@
+name: Tests
+
+on:
+  pull_request:
+  # Called by deploy.yml so main is only deployed once these pass.
+  workflow_call:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    services:
+      # The migrations use MySQL-only SQL (REGEXP), so tests need real MySQL.
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: fitness_testing
+          MYSQL_USER: test
+          MYSQL_PASSWORD: test
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USERNAME: test
+      DB_PASSWORD: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          # Same as the Dockerfile; composer.lock doesn't allow 8.3 yet.
+          php-version: '8.2'
+          extensions: pdo_mysql, mbstring, bcmath, gd, zip
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+
+      - run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Prepare app key
+        run: |
+          echo "APP_KEY=" > .env
+          php artisan key:generate --force
+
+      - run: php artisan test

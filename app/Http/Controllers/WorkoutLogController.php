@@ -19,8 +19,10 @@ public function store(Request $request)
         'details' => 'nullable|array',
     ]);
     $log = WorkoutLog::create(array_merge($data, ['user_id' => Auth::id()]));
-    }catch(\Exception $e){
+    }catch(\Illuminate\Validation\ValidationException $e){
         return response()->json(['error' => $e->getMessage()], 400);
+    }catch(\Exception $e){
+        return $this->serverError($e, 'error', 400);
     }
     return response()->json($log, 201);
 }

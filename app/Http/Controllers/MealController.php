@@ -77,7 +77,7 @@ class MealController extends Controller
                 'meal_time' => $validatedData['meal_time'],
             ]);
         } catch (Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
+            return $this->serverError($e, 'message', 400);
         }
         try {
             // Attach foods with pivot data (quantity)
@@ -88,7 +88,7 @@ class MealController extends Controller
                 $meal->foods()->attach($foodItem['food_id'], ['quantity' => $foodItem['quantity']]);
             }
         } catch (Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
+            return $this->serverError($e, 'message', 400);
         }
         try {
             //count how many meals the user logged every days in row
@@ -125,7 +125,7 @@ class MealController extends Controller
                 });
             $achievementService->checkAndUnlock(Auth::user(), 'calories', $caloriesToday);
         } catch (Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
+            return $this->serverError($e, 'message', 400);
         }
         return response()->json([
             'message' => 'Meal logged successfully.',
@@ -173,7 +173,7 @@ class MealController extends Controller
                 'meal'    => $meal->load('foods'),
             ]);
         } catch (Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
+            return $this->serverError($e, 'message', 400);
         }
     }
 
