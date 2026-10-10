@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Progress;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 
@@ -62,10 +63,18 @@ class ProfileController extends Controller
     {
         $user = $request->user();
         try {
-            $user->tokens()->delete(); // Revoke all tokens
-            $user->is_valid = false; // Set is_valid to false
-            $user->save(); // Save the changes
-            return response()->json(['message' => 'User profile deleted successfully.']);
+            // A real delete, not a deactivation: App Store guideline 5.1.1(v)
+            // requires the account and its data to go. Meals, progress,
+            // workouts, devices, custom foods and the rest cascade from the
+            // users row; tokens and roles are polymorphic, so they have no
+            // foreign key to cascade from and are removed here.
+            DB::transaction(function () use ($user) {
+                $user->tokens()->delete();
+                $user->roles()->detach();
+                $user->permissions()->detach();
+                $user->delete();
+            });
+            return response()->json(['message' => 'Account and data deleted.']);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
