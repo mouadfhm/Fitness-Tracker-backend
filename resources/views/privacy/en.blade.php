@@ -2,7 +2,7 @@
     <p><strong>The short version</strong></p>
     <ul class="glance">
         <li>We collect what you type into the app (your profile, meals, workouts and weight) so the app can track your progress.</li>
-        <li>We never sell your data, never show you ads based on it and never use it to track you across other apps or websites.</li>
+        <li>We never sell your data, and your health and fitness data is never used for ads. The Android app shows ads from Google AdMob, which uses your device's advertising ID (see section 6).</li>
         <li>You can delete your account and everything in it from the app at any time. It is permanent and takes effect immediately.</li>
     </ul>
 </div>
@@ -60,7 +60,7 @@
             <td>Your IP address and basic request information, used to block repeated sign-in attempts and to keep the service secure. Your app language is sent with each request so we can reply in that language.</td>
         </tr>
     </table>
-    <p class="muted" style="margin-top: 12px;">We do not collect your precise location, contacts, photos, advertising identifier or data from Apple Health or Google Fit.</p>
+    <p class="muted" style="margin-top: 12px;">We do not collect your precise location, contacts, photos or data from Apple Health or Google Fit.</p>
 </section>
 
 <section class="card" id="device">
@@ -91,13 +91,12 @@
     <h2><span class="num">5</span>What we never do</h2>
     <div class="badges">
         <span class="badge">No selling of data</span>
-        <span class="badge">No ad tracking</span>
+        <span class="badge">No health data in ads</span>
         <span class="badge">No data brokers</span>
     </div>
     <ul>
         <li>We do not sell, rent or trade your personal data.</li>
-        <li>We do not use your health and fitness data for advertising or marketing, and we do not share it with advertisers or data brokers.</li>
-        <li>We do not track you across other companies' apps or websites.</li>
+        <li>We do not use your health and fitness data for advertising or marketing, and we do not share it with advertisers, ad networks or data brokers. Ads are never chosen based on what you eat, weigh or log.</li>
     </ul>
 </section>
 
@@ -106,6 +105,9 @@
     <p>We share data only with the services below, and only what each one needs to do its job for us:</p>
     <h3>Google Firebase Cloud Messaging</h3>
     <p>Delivers push notifications. It receives your device's push token and the text of each notification. See <a href="https://firebase.google.com/support/privacy" rel="noopener">Firebase's privacy information</a>.</p>
+    <h3>Google AdMob (Android app only)</h3>
+    <p>The Android app shows banner ads from Google AdMob, which helps pay for the app. To choose, show and measure ads, Google's ad SDK collects information from your device directly, such as its advertising ID, IP address, device model and how you interact with the ads. Google may use this to show you personalised ads. We do not send AdMob anything about your account, body measurements or logs. See <a href="https://policies.google.com/technologies/partner-sites" rel="noopener">how Google uses data from apps that use its services</a>.</p>
+    <p>You can reset your advertising ID or turn off ad personalisation in your phone's settings (<em>Settings → Google → Ads</em> or <em>Settings → Privacy → Ads</em>, depending on your phone). The iPhone app currently shows no ads; if that changes, it will ask your permission before any tracking.</p>
     <h3>Our email provider</h3>
     <p>Sends password reset codes. It receives your email address and the code.</p>
     <h3>Open Food Facts</h3>
@@ -134,6 +136,7 @@
     <ul>
         <li><strong>See and correct your data:</strong> your profile, logs and workouts are all visible and editable in the app.</li>
         <li><strong>Delete your account:</strong> in the app, open <em>Me → Settings → Delete Account</em>. This permanently removes your account and all of its data.</li>
+        <li><strong>Ads:</strong> turn off ad personalisation or reset your advertising ID in your phone's settings (see section 6).</li>
         <li><strong>Notifications:</strong> choose which reminders you get in <em>Me → Settings</em>, or turn them all off in your phone's settings.</li>
         <li><strong>Other requests:</strong> depending on where you live (for example under the GDPR, Moroccan law 09-08 or California law), you may also have the right to get a copy of your data, restrict or object to its use, or withdraw consent. Contact us to make a request; we will reply within one month.</li>
     </ul>

@@ -2,7 +2,7 @@
     <p><strong>L'essentiel</strong></p>
     <ul class="glance">
         <li>Nous collectons ce que vous saisissez dans l'application (votre profil, vos repas, vos séances et votre poids) pour qu'elle puisse suivre vos progrès.</li>
-        <li>Nous ne vendons jamais vos données, ne les utilisons jamais pour vous montrer de la publicité et ne nous en servons jamais pour vous suivre sur d'autres applications ou sites.</li>
+        <li>Nous ne vendons jamais vos données, et vos données de santé et de sport ne servent jamais à la publicité. L'application Android affiche des annonces Google AdMob, qui utilise l'identifiant publicitaire de votre appareil (voir la section 6).</li>
         <li>Vous pouvez supprimer votre compte et tout son contenu depuis l'application à tout moment. La suppression est définitive et immédiate.</li>
     </ul>
 </div>
@@ -60,7 +60,7 @@
             <td>Votre adresse IP et des informations de base sur les requêtes, utilisées pour bloquer les tentatives de connexion répétées et sécuriser le service. La langue de l'application est envoyée avec chaque requête pour que nous répondions dans cette langue.</td>
         </tr>
     </table>
-    <p class="muted" style="margin-top: 12px;">Nous ne collectons pas votre position précise, vos contacts, vos photos, votre identifiant publicitaire ni de données d'Apple Santé ou de Google Fit.</p>
+    <p class="muted" style="margin-top: 12px;">Nous ne collectons pas votre position précise, vos contacts, vos photos ni de données d'Apple Santé ou de Google Fit.</p>
 </section>
 
 <section class="card" id="device">
@@ -91,13 +91,12 @@
     <h2><span class="num">5</span>Ce que nous ne faisons jamais</h2>
     <div class="badges">
         <span class="badge">Aucune vente de données</span>
-        <span class="badge">Aucun pistage publicitaire</span>
+        <span class="badge">Aucune donnée de santé dans les pubs</span>
         <span class="badge">Aucun courtier en données</span>
     </div>
     <ul>
         <li>Nous ne vendons, ne louons ni n'échangeons vos données personnelles.</li>
-        <li>Nous n'utilisons pas vos données de santé et de sport à des fins publicitaires ou marketing, et nous ne les partageons ni avec des annonceurs ni avec des courtiers en données.</li>
-        <li>Nous ne vous suivons pas sur les applications ou sites web d'autres entreprises.</li>
+        <li>Nous n'utilisons pas vos données de santé et de sport à des fins publicitaires ou marketing, et nous ne les partageons ni avec des annonceurs, ni avec des régies publicitaires, ni avec des courtiers en données. Les annonces ne sont jamais choisies selon ce que vous mangez, pesez ou enregistrez.</li>
     </ul>
 </section>
 
@@ -106,6 +105,9 @@
     <p>Nous ne partageons des données qu'avec les services ci-dessous, et uniquement ce dont chacun a besoin pour fonctionner :</p>
     <h3>Google Firebase Cloud Messaging</h3>
     <p>Envoie les notifications push. Il reçoit l'identifiant push de votre appareil et le texte de chaque notification. Voir <a href="https://firebase.google.com/support/privacy" rel="noopener">les informations de confidentialité de Firebase</a>.</p>
+    <h3>Google AdMob (application Android uniquement)</h3>
+    <p>L'application Android affiche des bannières publicitaires Google AdMob, qui aident à financer l'application. Pour choisir, afficher et mesurer les annonces, le SDK publicitaire de Google collecte directement des informations sur votre appareil, comme son identifiant publicitaire, votre adresse IP, le modèle de l'appareil et vos interactions avec les annonces. Google peut s'en servir pour vous montrer des annonces personnalisées. Nous n'envoyons à AdMob aucune information sur votre compte, vos mensurations ou vos journaux. Voir <a href="https://policies.google.com/technologies/partner-sites?hl=fr" rel="noopener">comment Google utilise les données des applications qui utilisent ses services</a>.</p>
+    <p>Vous pouvez réinitialiser votre identifiant publicitaire ou désactiver la personnalisation des annonces dans les réglages de votre téléphone (<em>Paramètres → Google → Annonces</em> ou <em>Paramètres → Confidentialité → Annonces</em>, selon le téléphone). L'application iPhone n'affiche actuellement aucune annonce ; si cela change, elle vous demandera votre autorisation avant tout pistage.</p>
     <h3>Notre prestataire d'e-mail</h3>
     <p>Envoie les codes de réinitialisation du mot de passe. Il reçoit votre adresse e-mail et le code.</p>
     <h3>Open Food Facts</h3>
@@ -134,6 +136,7 @@
     <ul>
         <li><strong>Consulter et corriger vos données :</strong> votre profil, vos journaux et vos séances sont tous visibles et modifiables dans l'application.</li>
         <li><strong>Supprimer votre compte :</strong> dans l'application, ouvrez <em>Moi → Paramètres → Supprimer le compte</em>. Votre compte et toutes ses données sont alors définitivement supprimés.</li>
+        <li><strong>Publicité :</strong> désactivez la personnalisation des annonces ou réinitialisez votre identifiant publicitaire dans les réglages de votre téléphone (voir la section 6).</li>
         <li><strong>Notifications :</strong> choisissez les rappels que vous recevez dans <em>Moi → Paramètres</em>, ou désactivez-les tous dans les réglages de votre téléphone.</li>
         <li><strong>Autres demandes :</strong> selon votre lieu de résidence (par exemple au titre du RGPD, de la loi marocaine 09-08 ou du droit californien), vous pouvez aussi avoir le droit d'obtenir une copie de vos données, d'en limiter l'utilisation ou de vous y opposer, ou de retirer votre consentement. Contactez-nous pour toute demande ; nous répondrons sous un mois.</li>
     </ul>
