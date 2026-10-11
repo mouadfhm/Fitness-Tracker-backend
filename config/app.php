@@ -69,6 +69,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Privacy Contact
+    |--------------------------------------------------------------------------
+    |
+    | The address shown on the public /privacy page for data requests. Falls
+    | back to the mail "from" address; with neither set, the page points
+    | people to Help & Support in the app instead.
+    |
+    */
+
+    'privacy_contact_email' => env('PRIVACY_CONTACT_EMAIL', env('MAIL_FROM_ADDRESS')),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |
