@@ -23,12 +23,12 @@ class AchievementService
 
     private function unlock($user, $achievement)
     {
-        if (!UserAchievement::where('user_id', $user->id)->where('achievement_id', $achievement->id)->exists()) {
-            UserAchievement::create([
-                'user_id' => $user->id,
-                'achievement_id' => $achievement->id,
-                'unlocked_at' => now(),
-            ]);
+        $userAchievement = UserAchievement::firstOrCreate(
+            ['user_id' => $user->id, 'achievement_id' => $achievement->id],
+            ['unlocked_at' => now()],
+        );
+
+        if ($userAchievement->wasRecentlyCreated) {
             $this->notificationService->sendNotification(
                 $user->id,
                 "🎉 Achievement Unlocked!",
