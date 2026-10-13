@@ -41,7 +41,7 @@
         </tr>
         <tr>
             <th>Profil et mensurations</th>
-            <td>Âge, sexe, taille, poids, niveau d'activité et objectif (perdre du poids, prendre du muscle ou maintenir). Nous les utilisons pour calculer vos objectifs de calories et de macronutriments.</td>
+            <td>Date de naissance (pour calculer votre âge), sexe, taille, poids, niveau d'activité et objectif (perdre du poids, prendre du muscle ou maintenir). Nous les utilisons pour calculer vos objectifs de calories et de macronutriments.</td>
         </tr>
         <tr>
             <th>Journaux de santé et de sport</th>

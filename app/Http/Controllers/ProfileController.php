@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Progress;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -24,6 +25,7 @@ class ProfileController extends Controller
             $validatedData = $request->validate([
                 'name'          => 'sometimes|string|max:255',
                 'age'           => 'sometimes|integer',
+                'birth_date'    => 'sometimes|nullable|date|before:today|after:1900-01-01',
                 'weight'        => 'sometimes|numeric',
                 'height'        => 'sometimes|numeric',
                 'gender'        => 'sometimes|in:male,female,other',
@@ -33,6 +35,7 @@ class ProfileController extends Controller
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         }
+        $validatedData = User::syncAgeWithBirthDate($validatedData, $user);
         $progress = null;
         if (isset($validatedData['weight'])) {
             try {

@@ -41,6 +41,7 @@ class User extends Authenticatable
         'email', 
         'password', 
         'age', 
+        'birth_date',
         'weight', 
         'height', 
         'gender', 
@@ -72,6 +73,7 @@ class User extends Authenticatable
     // learned about this user, use the default".
     protected $casts = [
         'email_verified_at'      => 'datetime',
+        'birth_date'             => 'date:Y-m-d',
         'last_engaged_at'        => 'datetime',
         'preferred_meal_hour'    => 'integer',
         'preferred_workout_hour' => 'integer',
@@ -103,6 +105,39 @@ class User extends Authenticatable
     public function localNow(?Carbon $now = null): Carbon
     {
         return ($now ?? Carbon::now())->copy()->setTimezone($this->timezoneOrDefault());
+    }
+
+    /**
+     * Age in whole years: from birth_date when the user has set one, so it
+     * goes up on their birthday, otherwise the age they typed in (accounts
+     * from before the app asked for a birthday, or older app versions).
+     */
+    public function getAgeAttribute($value): ?int
+    {
+        if ($this->birth_date !== null) {
+            return $this->birth_date->age;
+        }
+
+        return $value === null ? null : (int) $value;
+    }
+
+    /**
+     * Makes age and birth_date agree in a register or profile payload. A
+     * birthday also refreshes the stored age, the fallback if it is ever
+     * cleared. An age on its own comes from an app version that predates the
+     * birthday field: when it disagrees with the birthday on file, the user
+     * has just corrected it there, so that birthday no longer holds.
+     */
+    public static function syncAgeWithBirthDate(array $data, ?self $user = null): array
+    {
+        if (!empty($data['birth_date'])) {
+            $data['age'] = Carbon::parse($data['birth_date'])->age;
+        } elseif (isset($data['age']) && !array_key_exists('birth_date', $data)
+            && $user?->birth_date !== null && $user->age !== (int) $data['age']) {
+            $data['birth_date'] = null;
+        }
+
+        return $data;
     }
 
     /**
