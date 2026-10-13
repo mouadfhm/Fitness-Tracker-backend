@@ -18,6 +18,7 @@ class AuthController extends Controller
                 'email'         => 'required|email|unique:users',
                 'password'      => 'required|string|min:8|confirmed',
                 'age'           => 'nullable|integer',
+                'birth_date'    => 'nullable|date|before:today|after:1900-01-01',
                 'weight'        => 'nullable|numeric',
                 'height'        => 'nullable|numeric',
                 'gender'        => 'nullable|in:male,female,other',
@@ -27,12 +28,14 @@ class AuthController extends Controller
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         }
+        $validatedData = User::syncAgeWithBirthDate($validatedData);
         try {
             $user = User::create([
                 'name'          => $validatedData['name'],
                 'email'         => $validatedData['email'],
                 'password'      => Hash::make($validatedData['password']),
                 'age'           => $validatedData['age'] ?? null,
+                'birth_date'    => $validatedData['birth_date'] ?? null,
                 'weight'        => $validatedData['weight'] ?? null,
                 'height'        => $validatedData['height'] ?? null,
                 'gender'        => $validatedData['gender'] ?? null,

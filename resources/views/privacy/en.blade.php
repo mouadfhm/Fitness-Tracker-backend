@@ -41,7 +41,7 @@
         </tr>
         <tr>
             <th>Profile and body measurements</th>
-            <td>Age, gender, height, weight, activity level and fitness goal (lose weight, build muscle or maintain). We use these to work out your calorie and macro targets.</td>
+            <td>Date of birth (to work out your age), gender, height, weight, activity level and fitness goal (lose weight, build muscle or maintain). We use these to work out your calorie and macro targets.</td>
         </tr>
         <tr>
             <th>Health and fitness logs</th>
