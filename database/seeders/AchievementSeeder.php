@@ -31,8 +31,10 @@ class AchievementSeeder extends Seeder
             ['name' => 'Muscle Gain', 'name_fr' => 'Prise de muscle', 'description' => 'Gain 2 kg of muscle', 'description_fr' => 'Gagnez 2 kg de muscle', 'target' => 2, 'type' => 'muscle'],
         ];
 
+        // Keyed on the English name so running the seeder again (for example
+        // to pick up new translations) updates rows instead of copying them.
         foreach ($achievements as $achievement) {
-            Achievement::create($achievement);
+            Achievement::updateOrCreate(['name' => $achievement['name']], $achievement);
         }
     }
 }
