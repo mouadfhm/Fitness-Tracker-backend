@@ -16,7 +16,9 @@ use Throwable;
 class NotificationService
 {
     /**
-     * FCM refuses a batch request carrying more than 500 sub-messages.
+     * How many recipients are processed per sendBatch() call. A holdover from
+     * the FCM batch endpoint's 500-message limit; it now only bounds how many
+     * notification_logs rows are held open at once.
      */
     private const BATCH_SIZE = 500;
 
@@ -111,15 +113,13 @@ class NotificationService
      * as "reminders stopped going out" long before anyone thinks to look at how
      * they are sent.
      *
-     * Batched through `sendAll()` rather than `sendMulticast()`, which is the
-     * one deviation from the spec worth knowing about. Multicast posts a single
-     * *identical* payload to a list of tokens, and our payload is not identical:
-     * it carries the `log_id` the app posts back when the notification is
-     * tapped. Multicast would therefore have bought batching by silently
-     * switching off open-rate tracking on the only two notifications anyone
-     * measures. `sendAll()` posts an array of per-token messages through the
-     * same FCM batch endpoint — one HTTP call per 500 either way — and each
-     * message keeps its own data.
+     * Sent one `send()` call per recipient. This used to go through `sendAll()`,
+     * which posts to FCM's batch endpoint; Google has retired that endpoint
+     * (`/batch` answers 404), so every bulk send failed. Multicast was never an
+     * option: it posts a single *identical* payload to a list of tokens, and ours
+     * is not identical — it carries the `log_id` the app posts back when the
+     * notification is tapped, so multicast would silently switch off open-rate
+     * tracking. Each message keeps its own data.
      *
      * Kept as the front door for broadcast copy, but it is now a special case of
      * sendPersonalized() below — the same text for everybody — rather than a
@@ -213,7 +213,7 @@ class NotificationService
     }
 
     /**
-     * One FCM call for up to BATCH_SIZE recipients.
+     * Send to up to BATCH_SIZE recipients.
      *
      * @param array<int,string> $recipients user id => device token
      * @param array<int,array{title:string,body:string,route?:string}> $copyByUserId
@@ -222,6 +222,8 @@ class NotificationService
     private function sendBatch(array $recipients, array $copyByUserId, string $type, array &$result): void
     {
         $messages = [];
+        $tokens = [];
+        $userIdsByIndex = [];
 
         // Keyed by token because that is all the report gives back to identify a
         // sub-response by. A list per token rather than a single log: the same
@@ -239,6 +241,10 @@ class NotificationService
 
             try {
                 $messages[] = $this->buildMessage($token, $title, $body, $data);
+                // Parallel to $messages: who each one is for, so a failed send
+                // can be traced back to its token and user.
+                $tokens[] = $token;
+                $userIdsByIndex[] = $userId;
             } catch (Throwable $e) {
                 // A token the SDK will not even accept as a target. Left out of
                 // the batch rather than allowed to reject the whole request.
@@ -263,10 +269,10 @@ class NotificationService
         $attempted = count($messages);
 
         try {
-            $report = app('firebase')->sendAll($messages);
+            $firebase = app('firebase');
         } catch (Throwable $e) {
-            // The whole batch failed to leave the box — credentials, network,
-            // a 500 from Google. As everywhere else here, it must not take the
+            // The client could not even be built — missing or unreadable
+            // credentials. As everywhere else here, it must not take the
             // caller down with it; the next scheduled run will try again.
             Log::error('FCM bulk send failed', [
                 'type' => $type,
@@ -285,23 +291,37 @@ class NotificationService
         }
 
         $failed = 0;
+        $stale = [];
 
-        foreach ($report->failures()->getItems() as $item) {
-            $failed++;
-            $error = $item->error() ? $item->error()->getMessage() : 'Unknown FCM error';
+        // One send() per message. Google retired the batch endpoint that
+        // sendAll() posts to (`/batch` now answers 404), so every bulk send
+        // failed. send() uses the HTTP v1 API, as sendNotification() already
+        // does. A failure is recorded per message and never aborts the rest.
+        foreach ($messages as $i => $message) {
+            $token = $tokens[$i];
 
-            foreach ($logsByToken[$item->target()->value()] ?? [] as $log) {
-                $this->closeLog($log, NotificationLog::STATUS_FAILED, $error);
+            try {
+                $firebase->send($message);
+            } catch (NotFound | InvalidArgument $e) {
+                // The app was uninstalled or the token was rotated; dropped
+                // below in a single delete.
+                $stale[$token] = true;
+                $failed++;
+                $this->failLogs($logsByToken[$token] ?? [], $e->getMessage());
+            } catch (Throwable $e) {
+                Log::error('FCM send failed', [
+                    'user_id' => $userIdsByIndex[$i],
+                    'error' => $e->getMessage(),
+                ]);
+                $failed++;
+                $this->failLogs($logsByToken[$token] ?? [], $e->getMessage());
             }
         }
 
         $result['failed'] += $failed;
         $result['sent'] += max(0, $attempted - $failed);
 
-        // The app was uninstalled or the token was rotated. One delete for the
-        // batch, in place of the per-send NotFound/InvalidArgument catch that
-        // does this job on the single-send path.
-        $stale = array_values(array_unique(array_merge($report->invalidTokens(), $report->unknownTokens())));
+        $stale = array_map('strval', array_keys($stale));
 
         if ($stale !== []) {
             Log::info('Dropping stale FCM tokens', ['count' => count($stale)]);
@@ -531,6 +551,16 @@ class NotificationService
                 'error' => $e->getMessage(),
             ]);
             return null;
+        }
+    }
+
+    /**
+     * @param NotificationLog[] $logs
+     */
+    private function failLogs(array $logs, string $error): void
+    {
+        foreach ($logs as $log) {
+            $this->closeLog($log, NotificationLog::STATUS_FAILED, $error);
         }
     }
 
