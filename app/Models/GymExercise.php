@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class GymExercise extends Model
 {
     protected $table = 'gym_exercises';
-    protected $fillable = ['name', 'name_fr', 'description', 'type', 'body_part', 'equipment', 'level'];
+    protected $fillable = ['name', 'name_en', 'name_fr', 'description', 'type', 'body_part', 'equipment', 'level'];
     protected $appends = ['display_name'];
 
     public function getDisplayNameAttribute()
@@ -16,6 +16,6 @@ class GymExercise extends Model
             return $this->name_fr;
         }
 
-        return $this->name;
+        return $this->name_en ?? $this->name;
     }
 }

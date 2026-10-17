@@ -14,14 +14,14 @@ class GymExerciseSeeder extends Seeder
     public function run(): void
     {
         $filePath = database_path('data/megaGymDataset.csv');
-        $translationsPath = database_path('data/gym_exercises_translated.csv');
+        $namesPath = database_path('data/gym_exercise_names.csv');
 
         if (!file_exists($filePath)) {
             $this->command->error("CSV file not found at $filePath");
             return;
         }
 
-        $translations = $this->loadTranslations($translationsPath);
+        $names = $this->loadNames($namesPath);
 
         $file = fopen($filePath, "r");
         $isFirstRow = true;
@@ -41,9 +41,12 @@ class GymExerciseSeeder extends Seeder
                 continue;
             }
 
+            $plain = $names[mb_strtolower($name)] ?? [];
+
             GymExercise::create([
                 'name' => $name,
-                'name_fr' => $translations[strtolower($name)] ?? null,
+                'name_en' => $plain['name_en'] ?? null,
+                'name_fr' => $plain['name_fr'] ?? null,
                 'description' => $row[2],
                 'type' => $row[3],
                 'body_part' => $row[4],
@@ -58,25 +61,26 @@ class GymExerciseSeeder extends Seeder
     }
 
     /**
-     * @return array<string, string> lowercase title => French translation
+     * @return array<string, array<string, string>> lowercase source name => row
      */
-    protected function loadTranslations(string $path): array
+    protected function loadNames(string $path): array
     {
         if (!is_file($path)) {
-            $this->command->warn("No translations file at {$path}, seeding without name_fr.");
+            $this->command->warn("No names file at {$path}, seeding with the source names only.");
             return [];
         }
 
-        $translations = [];
+        $names = [];
         $handle = fopen($path, 'r');
-        fgetcsv($handle);
+        $header = fgetcsv($handle);
         while (($fields = fgetcsv($handle)) !== false) {
-            if (($fields[1] ?? '') !== '') {
-                $translations[strtolower($fields[0])] = $fields[1];
+            if (count($fields) === count($header)) {
+                $row = array_combine($header, $fields);
+                $names[mb_strtolower($fields[0])] ??= $row;
             }
         }
         fclose($handle);
 
-        return $translations;
+        return $names;
     }
 }
