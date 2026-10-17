@@ -1,0 +1,249 @@
+source,name_en,name_fr,category_en,category_fr
+"Cycling, mountain bike, bmx",Mountain biking or BMX,VTT ou BMX,Cycling,Vélo
+"Cycling, <10 mph, leisure bicycling","Cycling, leisurely, under 16 km an hour","Vélo de balade, moins de 16 km à l'heure",Cycling,Vélo
+"Cycling, >20 mph, racing","Cycling, racing, over 32 km an hour","Vélo de course, plus de 32 km à l'heure",Cycling,Vélo
+"Cycling, 10-11.9 mph, light","Cycling, light, 16 to 19 km an hour","Vélo, allure légère, 16 à 19 km à l'heure",Cycling,Vélo
+"Cycling, 12-13.9 mph, moderate","Cycling, moderate, 19 to 22 km an hour","Vélo, allure modérée, 19 à 22 km à l'heure",Cycling,Vélo
+"Cycling, 14-15.9 mph, vigorous","Cycling, fast, 22 to 25 km an hour","Vélo, allure rapide, 22 à 25 km à l'heure",Cycling,Vélo
+"Cycling, 16-19 mph, very fast, racing","Cycling, very fast, 26 to 30 km an hour","Vélo, très rapide, 26 à 30 km à l'heure",Cycling,Vélo
+Unicycling,Unicycling,Monocycle,Cycling,Vélo
+"Stationary cycling, very light","Exercise bike, very light","Vélo d'appartement, très léger",Fitness,Fitness
+"Stationary cycling, light","Exercise bike, light","Vélo d'appartement, léger",Fitness,Fitness
+"Stationary cycling, moderate","Exercise bike, moderate","Vélo d'appartement, modéré",Fitness,Fitness
+"Stationary cycling, vigorous","Exercise bike, intense","Vélo d'appartement, intense",Fitness,Fitness
+"Stationary cycling, very vigorous","Exercise bike, very intense","Vélo d'appartement, très intense",Fitness,Fitness
+"Calisthenics, vigorous, pushups, situps…","Bodyweight exercises, intense, push-ups and sit-ups","Exercices au poids du corps, intenses, pompes et abdos",Fitness,Fitness
+"Calisthenics, light","Bodyweight exercises, light","Exercices au poids du corps, légers",Fitness,Fitness
+"Circuit training, minimal rest","Circuit training, little rest","Circuit training, peu de repos",Fitness,Fitness
+"Weight lifting, body building, vigorous","Weight training, intense","Musculation, intense",Fitness,Fitness
+"Weight lifting, light workout","Weight training, light","Musculation, légère",Fitness,Fitness
+Health club exercise,Gym workout,Séance en salle de sport,Fitness,Fitness
+Stair machine,Stair climber machine,Simulateur d'escalier,Fitness,Fitness
+"Rowing machine, light","Rowing machine, light","Rameur, léger",Fitness,Fitness
+"Rowing machine, moderate","Rowing machine, moderate","Rameur, modéré",Fitness,Fitness
+"Rowing machine, vigorous","Rowing machine, intense","Rameur, intense",Fitness,Fitness
+"Rowing machine, very vigorous","Rowing machine, very intense","Rameur, très intense",Fitness,Fitness
+Ski machine,Ski machine,Simulateur de ski,Fitness,Fitness
+"Aerobics, low impact","Aerobics, low impact","Aérobic, faible impact",Fitness,Fitness
+"Aerobics, high impact","Aerobics, high impact","Aérobic, fort impact",Fitness,Fitness
+"Aerobics, step aerobics",Step aerobics,Step,Fitness,Fitness
+"Aerobics, general",Aerobics,Aérobic,Fitness,Fitness
+Jazzercise,Jazzercise,Jazzercise,Dance,Danse
+"Stretching, hatha yoga",Hatha yoga,Hatha yoga,Fitness,Fitness
+Mild stretching,Gentle stretching,Étirements doux,Fitness,Fitness
+Instructing aerobic class,Teaching an aerobics class,Donner un cours d'aérobic,Fitness,Fitness
+Water aerobics,Water aerobics,Aquagym,Swimming,Natation
+"Ballet, twist, jazz, tap","Ballet, jazz or tap dance","Danse classique, jazz ou claquettes",Dance,Danse
+"Ballroom dancing, slow","Ballroom dancing, slow","Danse de salon, lente",Dance,Danse
+"Ballroom dancing, fast","Ballroom dancing, fast","Danse de salon, rapide",Dance,Danse
+"Running, 5 mph (12 minute mile)",Running at 8 km an hour,Course à 8 km à l'heure,Running and athletics,Course et athlétisme
+"Running, 5.2 mph (11.5 minute mile)",Running at 8.4 km an hour,"Course à 8,4 km à l'heure",Running and athletics,Course et athlétisme
+"Running, 6 mph (10 min mile)",Running at 9.7 km an hour,"Course à 9,7 km à l'heure",Running and athletics,Course et athlétisme
+"Running, 6.7 mph (9 min mile)",Running at 10.8 km an hour,"Course à 10,8 km à l'heure",Running and athletics,Course et athlétisme
+"Running, 7 mph (8.5 min mile)",Running at 11.3 km an hour,"Course à 11,3 km à l'heure",Running and athletics,Course et athlétisme
+"Running, 7.5mph (8 min mile)",Running at 12 km an hour,Course à 12 km à l'heure,Running and athletics,Course et athlétisme
+"Running, 8 mph (7.5 min mile)",Running at 12.9 km an hour,"Course à 12,9 km à l'heure",Running and athletics,Course et athlétisme
+"Running, 8.6 mph (7 min mile)",Running at 13.8 km an hour,"Course à 13,8 km à l'heure",Running and athletics,Course et athlétisme
+"Running, 9 mph (6.5 min mile)",Running at 14.5 km an hour,"Course à 14,5 km à l'heure",Running and athletics,Course et athlétisme
+"Running, 10 mph (6 min mile)",Running at 16 km an hour,Course à 16 km à l'heure,Running and athletics,Course et athlétisme
+"Running, 10.9 mph (5.5 min mile)",Running at 17.5 km an hour,"Course à 17,5 km à l'heure",Running and athletics,Course et athlétisme
+"Running, cross country",Cross-country running,Cross,Running and athletics,Course et athlétisme
+"Running, general",Running,Course à pied,Running and athletics,Course et athlétisme
+"Running, on a track, team practice","Track running, team training","Course sur piste, entraînement en équipe",Running and athletics,Course et athlétisme
+"Running, stairs, up",Running up stairs,Montée d'escaliers en courant,Running and athletics,Course et athlétisme
+"Track and field (shot, discus)",Shot put or discus,Lancer du poids ou du disque,Running and athletics,Course et athlétisme
+"Track and field (high jump, pole vault)",High jump or pole vault,Saut en hauteur ou à la perche,Running and athletics,Course et athlétisme
+Track and field (hurdles),Hurdles,Course de haies,Running and athletics,Course et athlétisme
+Archery,Archery,Tir à l'arc,Other sports,Autres sports
+Badminton,Badminton,Badminton,Racket sports,Sports de raquette
+"Basketball game, competitive",Basketball match,Match de basket,Team and ball sports,Sports collectifs et de balle
+"Playing basketball, non game","Basketball, casual","Basket, pour le plaisir",Team and ball sports,Sports collectifs et de balle
+"Basketball, officiating",Refereeing basketball,Arbitrage de basket,Team and ball sports,Sports collectifs et de balle
+"Basketball, shooting baskets",Shooting hoops,Tirs au panier,Team and ball sports,Sports collectifs et de balle
+"Basketball, wheelchair",Wheelchair basketball,Basket fauteuil,Team and ball sports,Sports collectifs et de balle
+"Running, training, pushing wheelchair",Wheelchair racing training,Entraînement de course en fauteuil,Running and athletics,Course et athlétisme
+Billiards,Pool or billiards,Billard,Other sports,Autres sports
+Bowling,Bowling,Bowling,Other sports,Autres sports
+"Boxing, in ring",Boxing match,Combat de boxe,Combat sports,Sports de combat
+"Boxing, punching bag","Boxing, punching bag","Boxe, sac de frappe",Combat sports,Sports de combat
+"Boxing, sparring","Boxing, sparring","Boxe, sparring",Combat sports,Sports de combat
+"Coaching: football, basketball, soccer…",Coaching a sports team,Entraîner une équipe de sport,Team and ball sports,Sports collectifs et de balle
+"Cricket (batting, bowling)",Cricket,Cricket,Team and ball sports,Sports collectifs et de balle
+Croquet,Croquet,Croquet,Other sports,Autres sports
+Curling,Curling,Curling,Winter sports,Sports d'hiver
+Darts (wall or lawn),Darts,Fléchettes,Other sports,Autres sports
+Fencing,Fencing,Escrime,Combat sports,Sports de combat
+"Football, competitive",American football match,Match de football américain,Team and ball sports,Sports collectifs et de balle
+"Football, touch, flag, general",Flag football,Flag football,Team and ball sports,Sports collectifs et de balle
+"Football or baseball, playing catch",Playing catch,Jeu de lancer de balle,Team and ball sports,Sports collectifs et de balle
+"Frisbee playing, general",Frisbee,Frisbee,Team and ball sports,Sports collectifs et de balle
+"Frisbee, ultimate frisbee",Ultimate frisbee,Ultimate,Team and ball sports,Sports collectifs et de balle
+"Golf, general",Golf,Golf,Golf,Golf
+"Golf, walking and carrying clubs","Golf, walking and carrying clubs","Golf, à pied en portant le sac",Golf,Golf
+"Golf, driving range",Golf driving range,Practice de golf,Golf,Golf
+"Golf, miniature golf",Mini golf,Minigolf,Golf,Golf
+"Golf, walking and pulling clubs","Golf, walking with a trolley","Golf, à pied avec un chariot",Golf,Golf
+"Golf, using power cart","Golf, using a golf cart","Golf, en voiturette",Golf,Golf
+Gymnastics,Gymnastics,Gymnastique,Fitness,Fitness
+Hacky sack,Hacky sack,Footbag,Other sports,Autres sports
+Handball,"Handball, one on one",Pelote à main,Team and ball sports,Sports collectifs et de balle
+"Handball, team",Handball,Handball,Team and ball sports,Sports collectifs et de balle
+"Hockey, field hockey",Field hockey,Hockey sur gazon,Team and ball sports,Sports collectifs et de balle
+"Hockey, ice hockey",Ice hockey,Hockey sur glace,Winter sports,Sports d'hiver
+"Riding a horse, general",Horse riding,Équitation,Horse riding,Équitation
+"Horesback riding, saddling horse",Saddling a horse,Seller un cheval,Horse riding,Équitation
+"Horseback riding, grooming horse",Grooming a horse after riding,Panser un cheval après la monte,Horse riding,Équitation
+"Horseback riding, trotting","Horse riding, trot","Équitation, trot",Horse riding,Équitation
+"Horseback riding, walking","Horse riding, walk","Équitation, pas",Horse riding,Équitation
+"Horse racing, galloping","Horse riding, gallop","Équitation, galop",Horse riding,Équitation
+"Horse grooming, moderate",Grooming a horse,Panser un cheval,Horse riding,Équitation
+Horseshoe pitching,Horseshoe throwing,Lancer de fers à cheval,Other sports,Autres sports
+Jai alai,Basque pelota,Pelote basque,Racket sports,Sports de raquette
+"Martial arts, judo, karate, jujitsu","Judo, karate or jujitsu","Judo, karaté ou jujitsu",Combat sports,Sports de combat
+"Martial arts, kick boxing",Kickboxing,Kickboxing,Combat sports,Sports de combat
+"Martial arts, tae kwan do",Taekwondo,Taekwondo,Combat sports,Sports de combat
+Krav maga training,Krav maga,Krav-maga,Combat sports,Sports de combat
+Juggling,Juggling,Jonglage,Other sports,Autres sports
+Kickball,Kickball,Kickball,Team and ball sports,Sports collectifs et de balle
+Lacrosse,Lacrosse,Crosse,Team and ball sports,Sports collectifs et de balle
+Orienteering,Orienteering,Course d'orientation,Outdoor activities,Activités de plein air
+Playing paddleball,"Paddleball, casual","Paddleball, pour le plaisir",Racket sports,Sports de raquette
+"Paddleball, competitive",Paddleball match,Match de paddleball,Racket sports,Sports de raquette
+Polo,Polo,Polo,Horse riding,Équitation
+"Racquetball, competitive",Racquetball match,Match de racquetball,Racket sports,Sports de raquette
+Playing racquetball,"Racquetball, casual","Racquetball, pour le plaisir",Racket sports,Sports de raquette
+"Rock climbing, ascending rock",Rock climbing,Escalade,Outdoor activities,Activités de plein air
+"Rock climbing, rappelling",Abseiling,Descente en rappel,Outdoor activities,Activités de plein air
+"Jumping rope, fast","Jumping rope, fast","Corde à sauter, rapide",Fitness,Fitness
+"Jumping rope, moderate","Jumping rope, moderate","Corde à sauter, modérée",Fitness,Fitness
+"Jumping rope, slow","Jumping rope, slow","Corde à sauter, lente",Fitness,Fitness
+Rugby,Rugby,Rugby,Team and ball sports,Sports collectifs et de balle
+"Shuffleboard, lawn bowling",Shuffleboard or lawn bowls,Palet ou boules,Other sports,Autres sports
+Skateboarding,Skateboarding,Skateboard,Outdoor activities,Activités de plein air
+Roller skating,Roller skating,Patins à roulettes,Outdoor activities,Activités de plein air
+"Roller blading, in-line skating",Inline skating,Roller,Outdoor activities,Activités de plein air
+Sky diving,Skydiving,Parachutisme,Outdoor activities,Activités de plein air
+"Soccer, competitive",Football match,Match de football,Team and ball sports,Sports collectifs et de balle
+Playing soccer,"Football, casual","Football, pour le plaisir",Team and ball sports,Sports collectifs et de balle
+Softball or baseball,Softball or baseball,Softball ou baseball,Team and ball sports,Sports collectifs et de balle
+"Softball, officiating",Refereeing softball,Arbitrage de softball,Team and ball sports,Sports collectifs et de balle
+"Softball, pitching","Softball, pitching","Softball, lanceur",Team and ball sports,Sports collectifs et de balle
+Squash,Squash,Squash,Racket sports,Sports de raquette
+"Table tennis, ping pong",Table tennis,Tennis de table,Racket sports,Sports de raquette
+Tai chi,Tai chi,Tai-chi,Fitness,Fitness
+Playing tennis,Tennis,Tennis,Racket sports,Sports de raquette
+"Tennis, doubles","Tennis, doubles","Tennis, double",Racket sports,Sports de raquette
+"Tennis, singles","Tennis, singles","Tennis, simple",Racket sports,Sports de raquette
+Trampoline,Trampoline,Trampoline,Fitness,Fitness
+"Volleyball, competitive",Volleyball match,Match de volley,Team and ball sports,Sports collectifs et de balle
+Playing volleyball,"Volleyball, casual","Volley, pour le plaisir",Team and ball sports,Sports collectifs et de balle
+"Volleyball, beach",Beach volleyball,Beach-volley,Team and ball sports,Sports collectifs et de balle
+Wrestling,Wrestling,Lutte,Combat sports,Sports de combat
+Wallyball,Wallyball,Wallyball,Team and ball sports,Sports collectifs et de balle
+"Backpacking, Hiking with pack",Hiking with a backpack,Randonnée avec sac à dos,Walking and hiking,Marche et randonnée
+"Carrying infant, level ground",Carrying a baby on flat ground,Porter un bébé sur terrain plat,Everyday activities,Vie quotidienne
+"Carrying infant, upstairs",Carrying a baby upstairs,Porter un bébé dans les escaliers,Everyday activities,Vie quotidienne
+"Carrying 16 to 24 lbs, upstairs",Carrying 7 to 11 kg upstairs,Porter 7 à 11 kg dans les escaliers,Everyday activities,Vie quotidienne
+"Carrying 25 to 49 lbs, upstairs",Carrying 11 to 22 kg upstairs,Porter 11 à 22 kg dans les escaliers,Everyday activities,Vie quotidienne
+"Standing, playing with children, light","Playing with children, standing","Jouer avec des enfants, debout",Everyday activities,Vie quotidienne
+"Walk/run, playing with children, moderate","Playing with children, moderate","Jouer avec des enfants, modéré",Everyday activities,Vie quotidienne
+"Walk/run, playing with children, vigorous","Playing with children, energetic","Jouer avec des enfants, énergique",Everyday activities,Vie quotidienne
+Carrying small children,Carrying small children,Porter de jeunes enfants,Everyday activities,Vie quotidienne
+"Loading, unloading car",Loading and unloading a car,Charger et décharger une voiture,Everyday activities,Vie quotidienne
+"Climbing hills, carrying up to 9 lbs","Hill walking, carrying up to 4 kg","Marche en côte, jusqu'à 4 kg sur le dos",Walking and hiking,Marche et randonnée
+"Climbing hills, carrying 10 to 20 lb","Hill walking, carrying 5 to 9 kg","Marche en côte, 5 à 9 kg sur le dos",Walking and hiking,Marche et randonnée
+"Climbing hills, carrying 21 to 42 lb","Hill walking, carrying 10 to 19 kg","Marche en côte, 10 à 19 kg sur le dos",Walking and hiking,Marche et randonnée
+"Climbing hills, carrying over 42 lb","Hill walking, carrying over 19 kg","Marche en côte, plus de 19 kg sur le dos",Walking and hiking,Marche et randonnée
+Walking downstairs,Walking downstairs,Descendre les escaliers,Walking and hiking,Marche et randonnée
+"Hiking, cross country",Hiking,Randonnée,Walking and hiking,Marche et randonnée
+Bird watching,Birdwatching,Observation des oiseaux,Outdoor activities,Activités de plein air
+"Marching, rapidly, military","Military marching, fast",Marche militaire rapide,Walking and hiking,Marche et randonnée
+"Children's games, hopscotch, dodgeball",Children's games like hopscotch or dodgeball,Jeux d'enfants comme la marelle ou la balle au prisonnier,Everyday activities,Vie quotidienne
+Pushing stroller or walking with children,Walking with a pushchair or children,Marcher avec une poussette ou des enfants,Walking and hiking,Marche et randonnée
+Pushing a wheelchair,Pushing a wheelchair,Pousser un fauteuil roulant,Everyday activities,Vie quotidienne
+Race walking,Race walking,Marche athlétique,Walking and hiking,Marche et randonnée
+"Rock climbing, mountain climbing",Mountaineering,Alpinisme,Outdoor activities,Activités de plein air
+Walking using crutches,Walking on crutches,Marcher avec des béquilles,Walking and hiking,Marche et randonnée
+Walking the dog,Walking the dog,Promener le chien,Walking and hiking,Marche et randonnée
+"Walking, under 2.0 mph, very slow","Walking, very slow, under 3 km an hour","Marche très lente, moins de 3 km à l'heure",Walking and hiking,Marche et randonnée
+"Walking 2.0 mph, slow","Walking, slow, 3 km an hour","Marche lente, 3 km à l'heure",Walking and hiking,Marche et randonnée
+Walking 2.5 mph,Walking at 4 km an hour,Marche à 4 km à l'heure,Walking and hiking,Marche et randonnée
+"Walking 3.0 mph, moderate","Walking, moderate, 5 km an hour","Marche modérée, 5 km à l'heure",Walking and hiking,Marche et randonnée
+"Walking 3.5 mph, brisk pace","Walking, brisk, 5.6 km an hour","Marche rapide, 5,6 km à l'heure",Walking and hiking,Marche et randonnée
+"Walking 3.5 mph, uphill","Walking uphill, 5.6 km an hour","Marche en montée, 5,6 km à l'heure",Walking and hiking,Marche et randonnée
+"Walking 4.0 mph, very brisk","Walking, very brisk, 6.4 km an hour","Marche très rapide, 6,4 km à l'heure",Walking and hiking,Marche et randonnée
+Walking 4.5 mph,Walking at 7.2 km an hour,"Marche à 7,2 km à l'heure",Walking and hiking,Marche et randonnée
+Walking 5.0 mph,Walking at 8 km an hour,Marche à 8 km à l'heure,Walking and hiking,Marche et randonnée
+"Boating, power, speed boat",Driving a speedboat,Piloter un bateau à moteur,Water sports,Sports nautiques
+"Canoeing, camping trip",Canoe camping trip,Randonnée en canoë,Water sports,Sports nautiques
+"Canoeing, rowing, light","Canoeing or rowing, light","Canoë ou aviron, léger",Water sports,Sports nautiques
+"Canoeing, rowing, moderate","Canoeing or rowing, moderate","Canoë ou aviron, modéré",Water sports,Sports nautiques
+"Canoeing, rowing, vigorous","Canoeing or rowing, intense","Canoë ou aviron, intense",Water sports,Sports nautiques
+"Crew, sculling, rowing, competition",Rowing race,Course d'aviron,Water sports,Sports nautiques
+Kayaking,Kayaking,Kayak,Water sports,Sports nautiques
+Paddle boat,Pedal boat,Pédalo,Water sports,Sports nautiques
+"Windsurfing, sailing",Windsurfing,Planche à voile,Water sports,Sports nautiques
+"Sailing, competition",Sailing race,Régate,Water sports,Sports nautiques
+"Sailing, yachting, ocean sailing",Sailing at sea,Voile en mer,Water sports,Sports nautiques
+"Skiing, water skiing",Water skiing,Ski nautique,Water sports,Sports nautiques
+Ski mobiling,Jet skiing,Jet-ski,Water sports,Sports nautiques
+"Skin diving, fast","Free diving, fast","Plongée en apnée, rapide",Water sports,Sports nautiques
+"Skin diving, moderate","Free diving, moderate","Plongée en apnée, modérée",Water sports,Sports nautiques
+"Skin diving, scuba diving",Scuba diving,Plongée sous-marine,Water sports,Sports nautiques
+Snorkeling,Snorkelling,Randonnée palmée,Water sports,Sports nautiques
+"Surfing, body surfing or board surfing",Surfing or bodysurfing,Surf ou bodysurf,Water sports,Sports nautiques
+"Whitewater rafting, kayaking, canoeing",White water rafting or kayaking,Rafting ou kayak en eaux vives,Water sports,Sports nautiques
+"Swimming laps, freestyle, fast","Swimming laps, front crawl, fast","Longueurs en crawl, rapide",Swimming,Natation
+"Swimming laps, freestyle, slow","Swimming laps, front crawl, slow","Longueurs en crawl, lent",Swimming,Natation
+Swimming backstroke,"Swimming, backstroke",Nage sur le dos,Swimming,Natation
+Swimming breaststroke,"Swimming, breaststroke",Brasse,Swimming,Natation
+Swimming butterfly,"Swimming, butterfly",Papillon,Swimming,Natation
+"Swimming leisurely, not laps",Swimming for fun,"Baignade, nage tranquille",Swimming,Natation
+Swimming sidestroke,"Swimming, sidestroke",Nage indienne,Swimming,Natation
+Swimming synchronized,Synchronised swimming,Natation artistique,Swimming,Natation
+"Swimming, treading water, fast, vigorous","Treading water, fast","Nage sur place, rapide",Swimming,Natation
+"Swimming, treading water, moderate","Treading water, moderate","Nage sur place, modérée",Swimming,Natation
+"Water aerobics, water calisthenics","Water aerobics, bodyweight exercises","Aquagym, exercices au poids du corps",Swimming,Natation
+Water polo,Water polo,Water-polo,Swimming,Natation
+Water volleyball,Water volleyball,Volley aquatique,Swimming,Natation
+Water jogging,Water running,Aquajogging,Swimming,Natation
+"Diving, springboard or platform",Diving from a board or platform,Plongeon,Swimming,Natation
+"Ice skating, < 9 mph","Ice skating, slow","Patinage sur glace, lent",Winter sports,Sports d'hiver
+"Ice skating, average speed",Ice skating,Patinage sur glace,Winter sports,Sports d'hiver
+"Ice skating, rapidly","Ice skating, fast","Patinage sur glace, rapide",Winter sports,Sports d'hiver
+"Speed skating, ice, competitive",Speed skating race,Course de patinage de vitesse,Winter sports,Sports d'hiver
+"Cross country snow skiing, slow","Cross-country skiing, slow","Ski de fond, lent",Winter sports,Sports d'hiver
+"Cross country skiing, moderate","Cross-country skiing, moderate","Ski de fond, modéré",Winter sports,Sports d'hiver
+"Cross country skiing, vigorous","Cross-country skiing, intense","Ski de fond, intense",Winter sports,Sports d'hiver
+"Cross country skiing, racing",Cross-country skiing race,Course de ski de fond,Winter sports,Sports d'hiver
+"Cross country skiing, uphill",Cross-country skiing uphill,Ski de fond en montée,Winter sports,Sports d'hiver
+"Snow skiing, downhill skiing, light","Downhill skiing, light","Ski alpin, léger",Winter sports,Sports d'hiver
+"Downhill snow skiing, moderate","Downhill skiing, moderate","Ski alpin, modéré",Winter sports,Sports d'hiver
+"Downhill snow skiing, racing",Downhill ski race,Course de ski alpin,Winter sports,Sports d'hiver
+"Sledding, tobagganing, luge",Sledging or luge,Luge,Winter sports,Sports d'hiver
+Snow shoeing,Snowshoeing,Raquettes à neige,Winter sports,Sports d'hiver
+Snowmobiling,Snowmobiling,Motoneige,Winter sports,Sports d'hiver
+General housework,Housework,Ménage,Home and garden,Maison et jardin
+Cleaning gutters,Cleaning gutters,Nettoyer les gouttières,Home and garden,Maison et jardin
+Painting,Painting walls,Peinture des murs,Home and garden,Maison et jardin
+"Sit, playing with animals","Playing with pets, sitting","Jouer avec des animaux, assis",Everyday activities,Vie quotidienne
+"Walk / run, playing with animals","Playing with pets, walking or running","Jouer avec des animaux, en marchant ou en courant",Everyday activities,Vie quotidienne
+Bathing dog,Bathing a dog,Laver un chien,Everyday activities,Vie quotidienne
+"Mowing lawn, walk, power mower","Mowing the lawn, push mower","Tondre la pelouse, tondeuse à pousser",Home and garden,Maison et jardin
+"Mowing lawn, riding mower","Mowing the lawn, ride-on mower","Tondre la pelouse, tondeuse autoportée",Home and garden,Maison et jardin
+"Walking, snow blower","Clearing snow, walk-behind snow blower",Déneiger avec une souffleuse à pousser,Home and garden,Maison et jardin
+"Riding, snow blower","Clearing snow, ride-on snow blower",Déneiger avec une souffleuse autoportée,Home and garden,Maison et jardin
+Shoveling snow by hand,Shovelling snow,Pelleter la neige,Home and garden,Maison et jardin
+Raking lawn,Raking the lawn,Ratisser la pelouse,Home and garden,Maison et jardin
+"Gardening, general",Gardening,Jardinage,Home and garden,Maison et jardin
+"Bagging grass, leaves",Bagging grass or leaves,Ramasser l'herbe ou les feuilles,Home and garden,Maison et jardin
+Watering lawn or garden,Watering the garden,Arroser le jardin,Home and garden,Maison et jardin
+"Weeding, cultivating garden",Weeding the garden,Désherber le jardin,Home and garden,Maison et jardin
+"Carpentry, general",Carpentry,Menuiserie,Home and garden,Maison et jardin
+Carrying heavy loads,Carrying heavy loads,Porter de lourdes charges,Everyday activities,Vie quotidienne
+Carrying moderate loads upstairs,Carrying loads upstairs,Porter des charges dans les escaliers,Everyday activities,Vie quotidienne
+General cleaning,Cleaning,Nettoyage,Home and garden,Maison et jardin
+"Cleaning, dusting",Dusting,Dépoussiérage,Home and garden,Maison et jardin
+Taking out trash,Taking out the rubbish,Sortir les poubelles,Home and garden,Maison et jardin
+"Walking, pushing a wheelchair",Walking and pushing a wheelchair,Marcher en poussant un fauteuil roulant,Everyday activities,Vie quotidienne
+"Teach physical education,exercise class",Teaching a PE or exercise class,Donner un cours d'EPS ou de sport,Fitness,Fitness
