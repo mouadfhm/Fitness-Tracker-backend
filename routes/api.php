@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\FoodController;
 use App\Http\Controllers\MealController;
+use App\Http\Controllers\MealScanController;
 use App\Http\Controllers\GoalController;
 use App\Http\Controllers\ProgressController;
 use App\Http\Controllers\WorkoutController;
@@ -53,6 +54,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/macros', [MealController::class, 'totalMacros']);
         Route::get('/search', [MealController::class, 'index']);
         Route::post('/add', [MealController::class, 'store']);
+        Route::post('/scan', [MealScanController::class, 'scan'])->middleware('throttle:meal-scan');
         Route::get('/{id}', [MealController::class, 'show']);
         Route::put('/{id}', [MealController::class, 'update']);
         Route::delete('/{id}', [MealController::class, 'destroy']);

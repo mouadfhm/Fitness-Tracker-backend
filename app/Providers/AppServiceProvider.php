@@ -2,12 +2,15 @@
 
 namespace App\Providers;
 
+use Anthropic\Client;
 use App\Models\Meal;
 use App\Models\Progress;
 use App\Models\Workout;
 use App\Models\WorkoutLog;
 use App\Observers\EngagementObserver;
 use App\Observers\StreakObserver;
+use App\Services\MealScan\ClaudeFoodVision;
+use App\Services\MealScan\FoodVision;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -53,7 +56,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(FoodVision::class, fn () => new ClaudeFoodVision(
+            new Client(
+                apiKey: (string) config('services.anthropic.key'),
+                requestOptions: ['timeout' => 30, 'maxRetries' => 1],
+            ),
+            config('services.anthropic.meal_scan_model'),
+        ));
     }
 
     /**
@@ -75,7 +84,8 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Limits for the unauthenticated auth endpoints. Per email as well as per
      * IP for the ones that take an email, so one account can't be hammered
-     * from many addresses and one address can't sweep many accounts.
+     * from many addresses and one address can't sweep many accounts. Plus
+     * the meal scanner, which costs money per call.
      */
     private function configureRateLimiting(): void
     {
@@ -97,6 +107,14 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('reset-password', fn (Request $request) => [
             Limit::perMinute(10)->by('reset-ip:'.$request->ip()),
+        ]);
+
+        // Every meal-scan frame is a paid model call. The app sends at most
+        // one every 1.5 s while scanning and pauses itself once the plate is
+        // read, so these only stop runaway clients.
+        RateLimiter::for('meal-scan', fn (Request $request) => [
+            Limit::perMinute(40)->by('meal-scan:'.$request->user()?->id),
+            Limit::perDay(600)->by('meal-scan-day:'.$request->user()?->id),
         ]);
     }
 }

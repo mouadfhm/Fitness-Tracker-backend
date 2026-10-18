@@ -57,6 +57,7 @@ All routes require `auth:sanctum` except `POST /api/register` and `POST /api/log
 ### Services
 - `App\Services\AchievementService` — checks achievement thresholds and calls `NotificationService` on unlock
 - `App\Services\NotificationService` — wraps Firebase messaging; looks up `UserDevices` token for a user and sends a FCM push
+- `App\Services\MealScan` — the live meal scanner behind `POST /api/meals/scan`: `ClaudeFoodVision` sends one camera frame to Claude (`MEAL_SCAN_MODEL`, default `claude-haiku-5-5`; needs `ANTHROPIC_API_KEY`, else the endpoint returns 503) for foods, boxes and grams, and `FoodMatcher` maps each to a row in `foods`. Throttled by the `meal-scan` limiter because every call is paid
 
 ### Auth Flow
 - Register creates a user, assigns the `user` role, returns a Sanctum plain-text token

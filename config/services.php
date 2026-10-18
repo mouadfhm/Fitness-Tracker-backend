@@ -39,4 +39,11 @@ return [
         'key' => env('DEEPL_API_KEY'),
     ],
 
+    // Live meal scanner: each camera frame goes to this model, which names
+    // the foods, where they are and roughly how many grams.
+    'anthropic' => [
+        'key' => env('ANTHROPIC_API_KEY'),
+        'meal_scan_model' => env('MEAL_SCAN_MODEL', 'claude-haiku-5-5'),
+    ],
+
 ];
