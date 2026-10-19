@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use App\Services\AchievementService;
 
@@ -70,23 +71,38 @@ class MealController extends Controller
         } catch (ValidationException $e) {
             return response()->json(['message' => $e->getMessage()], 400);
         }
-        try {
-            $meal = Meal::create([
-                'user_id'   => Auth::id(),
-                'date'      => $validatedData['date'],
-                'meal_time' => $validatedData['meal_time'],
-            ]);
-        } catch (Exception $e) {
-            return $this->serverError($e, 'message', 400);
+        // Resolve every food before writing anything. A name that matched no
+        // row used to attach nothing, so the app was told the meal was logged
+        // while Today stayed empty. Names shown in the app are name_en/name_fr,
+        // not the stored USDA-style name, so all three are tried.
+        $foods = [];
+        foreach ($validatedData['foods'] as $index => $foodItem) {
+            $foodId = $foodItem['food_id'] ?? null;
+            if (!$foodId && !empty($foodItem['name'])) {
+                $name = $foodItem['name'];
+                $foodId = Food::where('name', $name)->value('id')
+                    ?? Food::where('name_en', $name)->value('id')
+                    ?? Food::where('name_fr', $name)->value('id');
+            }
+            if (!$foodId) {
+                return response()->json([
+                    'message' => "Food not found: " . ($foodItem['name'] ?? "item $index"),
+                ], 422);
+            }
+            $foods[] = ['id' => $foodId, 'quantity' => $foodItem['quantity']];
         }
         try {
-            // Attach foods with pivot data (quantity)
-            foreach ($validatedData['foods'] as $foodItem) {
-                if (!isset($foodItem['food_id'])) {
-                    $foodItem['food_id'] = Food::where('name', $foodItem['name'])->value('id');
+            $meal = DB::transaction(function () use ($validatedData, $foods) {
+                $meal = Meal::create([
+                    'user_id'   => Auth::id(),
+                    'date'      => $validatedData['date'],
+                    'meal_time' => $validatedData['meal_time'],
+                ]);
+                foreach ($foods as $food) {
+                    $meal->foods()->attach($food['id'], ['quantity' => $food['quantity']]);
                 }
-                $meal->foods()->attach($foodItem['food_id'], ['quantity' => $foodItem['quantity']]);
-            }
+                return $meal;
+            });
         } catch (Exception $e) {
             return $this->serverError($e, 'message', 400);
         }
