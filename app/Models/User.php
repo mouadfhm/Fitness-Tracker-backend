@@ -23,18 +23,33 @@ class User extends Authenticatable
     public const DEFAULT_TIMEZONE = 'Africa/Casablanca';
 
     /**
-     * How much above resting each activity level is assumed to burn.
-     *
-     * Lifted verbatim out of GoalController::calculateMacros, including the 1.2
-     * fallback for a null or unrecognised level.
+     * How much above resting each activity level is assumed to burn: the
+     * standard Mifflin-St Jeor factors, matching the descriptions the app shows
+     * for each level ("Exercise 3–5 days a week" is moderate, and so on).
+     * Before, only three of the five levels the app offers were listed, so
+     * "light" and "very_active" silently fell back to sedentary.
      */
     public const ACTIVITY_MULTIPLIERS = [
-        'sedentary' => 1.2,
-        'moderate'  => 1.4,
-        'active'    => 1.6,
+        'sedentary'   => 1.2,
+        'light'       => 1.375,
+        'moderate'    => 1.55,
+        'active'      => 1.725,
+        'very_active' => 1.9,
     ];
 
     private const DEFAULT_ACTIVITY_MULTIPLIER = 1.2;
+
+    /**
+     * A weight-loss target never goes below this, whatever the arithmetic says:
+     * the usual floor for eating without supervision. Keyed by gender, with the
+     * midpoint for anyone who has not said.
+     */
+    private const MINIMUM_CALORIES = [
+        'male'   => 1500,
+        'female' => 1200,
+    ];
+
+    private const DEFAULT_MINIMUM_CALORIES = 1350;
 
     protected $fillable = [
         'name', 
@@ -156,22 +171,26 @@ class User extends Authenticatable
             return null;
         }
 
+        // The formula has a constant for men (+5) and one for women (-161).
+        // "other" or unset used to get the women's one; the midpoint is the
+        // least wrong guess for someone we know nothing about.
+        $sexConstant = match ($this->gender) {
+            'male'   => 5,
+            'female' => -161,
+            default  => -78,
+        };
+
         return 10 * $this->weight
             + 6.25 * $this->height
             - 5 * $this->age
-            + ($this->gender === 'male' ? 5 : -161);
+            + $sexConstant;
     }
 
     /**
-     * Calories the user is aiming to eat today, or null on an incomplete profile.
-     *
-     * @param float $caloriesBurnedToday Today's logged workout burn, which the
-     *        target moves with — train harder, eat more. The caller supplies it
-     *        because the two callers source it differently: the goals endpoint
-     *        queries one user, the reminder commands have already fetched the
-     *        burn for everybody in one grouped query.
+     * What the user burns on a typical day: resting burn times their activity
+     * level. Null on an incomplete profile.
      */
-    public function dailyCalorieTarget(float $caloriesBurnedToday = 0.0): ?float
+    public function totalDailyEnergyExpenditure(): ?float
     {
         $bmr = $this->basalMetabolicRate();
 
@@ -179,13 +198,41 @@ class User extends Authenticatable
             return null;
         }
 
-        $multiplier = self::ACTIVITY_MULTIPLIERS[$this->activity_level] ?? self::DEFAULT_ACTIVITY_MULTIPLIER;
+        // Lower-cased because app versions before this fix sent "Moderate".
+        $level = strtolower((string) $this->activity_level);
 
-        $target = ($bmr * $multiplier) + $caloriesBurnedToday;
+        return $bmr * (self::ACTIVITY_MULTIPLIERS[$level] ?? self::DEFAULT_ACTIVITY_MULTIPLIER);
+    }
 
+    /**
+     * Calories the user is aiming to eat each day, or null on an incomplete
+     * profile.
+     *
+     * The same every day. Logged workouts used to be added on top, but the
+     * activity level already describes the user's training ("Exercise 3–5 days
+     * a week"), so that counted exercise twice and could wipe out a cut's whole
+     * deficit.
+     */
+    public function dailyCalorieTarget(): ?float
+    {
+        $tdee = $this->totalDailyEnergyExpenditure();
+
+        if ($tdee === null) {
+            return null;
+        }
+
+        $target = $tdee;
+
+        // 500 kcal (about 0.5 kg a week) and 300 kcal are right for an average
+        // adult, but a flat 500 is a quarter of a small person's whole burn. So
+        // the change is also held to 20% (loss) and 10% (gain) of their burn,
+        // and a weight-loss target never drops below the floor.
         return match ($this->fitness_goal) {
-            'weight_loss' => $target - 500,
-            'muscle_gain' => $target + 300,
+            'weight_loss' => max(
+                $target - min(500, 0.20 * $target),
+                min($target, self::MINIMUM_CALORIES[$this->gender] ?? self::DEFAULT_MINIMUM_CALORIES)
+            ),
+            'muscle_gain' => $target + min(300, 0.10 * $target),
             default       => $target,
         };
     }
