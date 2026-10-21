@@ -21,15 +21,19 @@ class ProfileController extends Controller
     public function update(Request $request)
     {
         $user = $request->user();
+        // App versions before the calorie fix sent "Moderate".
+        if (is_string($request->input('activity_level'))) {
+            $request->merge(['activity_level' => strtolower($request->input('activity_level'))]);
+        }
         try {
             $validatedData = $request->validate([
                 'name'          => 'sometimes|string|max:255',
-                'age'           => 'sometimes|integer',
+                'age'           => 'sometimes|integer|between:5,120',
                 'birth_date'    => 'sometimes|nullable|date|before:today|after:1900-01-01',
-                'weight'        => 'sometimes|numeric',
-                'height'        => 'sometimes|numeric',
+                'weight'        => 'sometimes|numeric|between:20,400',
+                'height'        => 'sometimes|numeric|between:50,272',
                 'gender'        => 'sometimes|in:male,female,other',
-                'activity_level' => 'sometimes|string',
+                'activity_level' => 'sometimes|in:' . implode(',', array_keys(User::ACTIVITY_MULTIPLIERS)),
                 'fitness_goal'  => 'sometimes|in:weight_loss,muscle_gain,maintenance',
             ]);
         } catch (ValidationException $e) {

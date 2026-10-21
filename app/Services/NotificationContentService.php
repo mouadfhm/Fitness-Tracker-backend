@@ -188,7 +188,7 @@ class NotificationContentService
             $weighFrom = $now->copy()->subDays(self::WEIGHT_WINDOW_DAYS)->toDateString();
 
             $calories = $this->caloriesByUserAndDate($userIds, $mealsFrom, $to);
-            [$burned, $trainingDates] = $this->trainingByUser($userIds, $trainFrom, $to);
+            $trainingDates = $this->trainingDatesByUser($userIds, $trainFrom, $to);
             $weighIns = $this->weighInsByUser($userIds, $weighFrom, $to);
 
             foreach ($users as $user) {
@@ -196,7 +196,6 @@ class NotificationContentService
                     $user,
                     $now,
                     $calories,
-                    $burned,
                     $trainingDates[$user->id] ?? [],
                     $weighIns[$user->id] ?? []
                 );
@@ -441,49 +440,34 @@ class NotificationContentService
     }
 
     /**
-     * Calories burned per user per date, and the set of dates each user trained.
+     * The set of dates each user trained.
      *
-     * Two queries rather than one because the two workout tables are not
-     * interchangeable. `workouts` (v1) is what the app writes today and what the
-     * calorie goal has always been adjusted by, so the burn comes from there
-     * alone — pulling in v2 rows would move every user's goal the day v2 logging
-     * starts. Training *days* come from both, because the record should not
-     * reset itself when the app switches tables.
+     * From both workout tables, because the record should not reset itself
+     * when the app switches tables. Burn is no longer read: the calorie goal
+     * stopped moving with logged workouts, since the activity level already
+     * counts the user's training.
      *
      * @param int[] $userIds
-     * @return array{0:array<string,float>,1:array<int,string[]>} burned by "userId|date", dates by user id
+     * @return array<int,string[]> dates by user id
      */
-    private function trainingByUser(array $userIds, string $from, string $to): array
+    private function trainingDatesByUser(array $userIds, string $from, string $to): array
     {
-        $burned = [];
-        $dates  = [];
+        $dates = [];
 
-        $workouts = DB::table('workouts')
-            ->whereIn('user_id', $userIds)
-            ->whereBetween('workout_date', [$from, $to])
-            ->groupBy('user_id', 'workout_date')
-            ->selectRaw('user_id, workout_date, SUM(calories_burned) as burned')
-            ->get();
+        foreach (['workouts', 'workout_logs'] as $table) {
+            $rows = DB::table($table)
+                ->whereIn('user_id', $userIds)
+                ->whereBetween('workout_date', [$from, $to])
+                ->groupBy('user_id', 'workout_date')
+                ->select('user_id', 'workout_date')
+                ->get();
 
-        foreach ($workouts as $row) {
-            $userId = (int) $row->user_id;
-
-            $burned[self::key($userId, $row->workout_date)] = (float) $row->burned;
-            $dates[$userId][] = self::date($row->workout_date);
+            foreach ($rows as $row) {
+                $dates[(int) $row->user_id][] = self::date($row->workout_date);
+            }
         }
 
-        $logs = DB::table('workout_logs')
-            ->whereIn('user_id', $userIds)
-            ->whereBetween('workout_date', [$from, $to])
-            ->groupBy('user_id', 'workout_date')
-            ->select('user_id', 'workout_date')
-            ->get();
-
-        foreach ($logs as $row) {
-            $dates[(int) $row->user_id][] = self::date($row->workout_date);
-        }
-
-        return [$burned, $dates];
+        return $dates;
     }
 
     /**
@@ -521,7 +505,6 @@ class NotificationContentService
 
     /**
      * @param array<string,float> $calories
-     * @param array<string,float> $burned
      * @param string[] $trainingDates
      * @param array<int,array{date:string,weight:float}> $weighIns
      */
@@ -529,7 +512,6 @@ class NotificationContentService
         User $user,
         Carbon $now,
         array $calories,
-        array $burned,
         array $trainingDates,
         array $weighIns
     ): NotificationFacts {
@@ -538,14 +520,12 @@ class NotificationContentService
         $localNow = $user->localNow($now);
         $today    = $localNow->toDateString();
 
-        $burnedToday = $burned[self::key($user->id, $today)] ?? 0.0;
-
         [$recent, $record] = self::trainingCounts($trainingDates, $today);
         [$change, $span, $weighedToday] = self::weightTrend($weighIns, $today);
 
         return new NotificationFacts(
             localHour: $localNow->hour,
-            calorieTarget: $user->dailyCalorieTarget($burnedToday),
+            calorieTarget: $user->dailyCalorieTarget(),
             caloriesEaten: $calories[self::key($user->id, $today)] ?? 0.0,
             daysTrainedRecently: $recent,
             bestDaysTrained: $record,

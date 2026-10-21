@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
-use App\Models\Workout;
 
 
 
@@ -65,27 +64,35 @@ class GoalController extends Controller
             return null;
         }
 
-        // Fetch total workout calories burned today
-        $workouts = Workout::where('user_id', $user->id)
-            ->whereDate('workout_date', today())
-            ->sum('calories_burned');
-
         // BMR (Mifflin-St Jeor), the activity multiplier and the per-goal
         // adjustment now live on the User model. They moved because the daily
         // reminders quote this number back at the user ("480 kcal under your
         // goal"), and a second copy of the formula would eventually disagree
         // with this screen. Same arithmetic, one home.
         $bmr = $user->basalMetabolicRate();
-        $dailyCalories = $user->dailyCalorieTarget((float) $workouts);
+        $tdee = $user->totalDailyEnergyExpenditure();
+        $dailyCalories = $user->dailyCalorieTarget();
 
-        // Adjust macros dynamically
-        $protein = $user->weight * 2; // More protein on high workout days
+        // Protein per kg: most while cutting (keeps muscle), a little less while
+        // gaining, 1.6 g/kg to maintain. Counted against the weight at a BMI of
+        // 25 at most, since extra fat mass needs no extra protein: 2 g per kg
+        // of a 130 kg body asked for 260 g a day.
+        $proteinPerKg = match ($user->fitness_goal) {
+            'weight_loss' => 2.0,
+            'muscle_gain' => 1.8,
+            default       => 1.6,
+        };
+        $heightM = $user->height / 100;
+        $proteinWeight = min($user->weight, 25 * $heightM * $heightM);
+
+        $protein = $proteinWeight * $proteinPerKg;
         $fat     = ($dailyCalories * 0.25) / 9; // 25% of total calories from fat, divided by 9 calories per gram
         $carbs   = max(0, ($dailyCalories - ($protein * 4 + $fat * 9)) / 4);
 
         return [
             'bmr'      => $bmr,
-            'tdee'     => $dailyCalories,
+            // What they burn on a typical day; 'calories' is what to eat.
+            'tdee'     => $tdee,
             'calories' => round($dailyCalories),
             'protein'  => round($protein),
             'carbs'    => round($carbs),
