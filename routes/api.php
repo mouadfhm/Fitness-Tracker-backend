@@ -59,6 +59,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}', [MealController::class, 'show']);
         Route::put('/{id}', [MealController::class, 'update']);
         Route::delete('/{id}', [MealController::class, 'destroy']);
+        Route::delete('/{id}/food-entries/{entryId}', [MealController::class, 'destroyFood']);
     });
 
     // Goal & progress tracking
