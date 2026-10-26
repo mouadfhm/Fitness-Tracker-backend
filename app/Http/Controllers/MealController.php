@@ -193,6 +193,28 @@ class MealController extends Controller
         }
     }
 
+    // Remove one food entry (a food_meal row) from a meal. A meal logged in
+    // one go, such as a repeated meal, holds several foods, and deleting the
+    // whole meal would take the others with it. A meal left empty is deleted.
+    public function destroyFood($id, $entryId)
+    {
+        $meal = Meal::where('user_id', Auth::id())->findOrFail($id);
+        $removed = DB::table('food_meal')
+            ->where('meal_id', $meal->id)
+            ->where('id', $entryId)
+            ->delete();
+        if (!$removed) {
+            return response()->json(['message' => 'Food not found in this meal.'], 404);
+        }
+        if (!$meal->foods()->exists()) {
+            $meal->delete();
+        }
+
+        return response()->json([
+            'message' => 'Food removed from meal.'
+        ]);
+    }
+
     // Delete a meal
     public function destroy($id)
     {
