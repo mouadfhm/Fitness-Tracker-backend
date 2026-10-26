@@ -9,9 +9,17 @@ use Illuminate\Support\Facades\Auth;
 
 class FoodController extends Controller
 {
+    /**
+     * The whole food list (~17k rows), downloaded by the app on start. Kept
+     * small for slow networks: one name per food, in the request's language,
+     * and macros rounded to one decimal (MySQL FLOAT columns otherwise come
+     * out as 1.100000023841858). The route adds an ETag, so an app that
+     * already has this list gets a 304 instead.
+     */
     public function index(Request $request)
     {
         $userId = Auth::id();
+        $french = app()->getLocale() === 'fr';
 
         $query = Food::query()
             ->where(function ($query) use ($userId) {
@@ -24,18 +32,14 @@ class FoodController extends Controller
             $query->where('name', 'like', "%{$request->name}%");
         }
 
+        // Same rule as Food::display_name.
+        $displayName = $french
+            ? "CASE WHEN foods.name_fr IS NOT NULL AND foods.name_fr <> '' THEN foods.name_fr ELSE COALESCE(foods.name_en, foods.name) END"
+            : 'COALESCE(foods.name_en, foods.name)';
+
         $foods = $query
-            ->select(
-                'foods.id',
-                'foods.name',
-                'foods.name_en',
-                'foods.name_fr',
-                'foods.calories',
-                'foods.protein',
-                'foods.carbs',
-                'foods.fats',
-                'foods.added_by',
-            )
+            ->select('foods.id', 'foods.calories', 'foods.protein', 'foods.carbs', 'foods.fats')
+            ->selectRaw("{$displayName} AS display_name")
             ->withCount([
                 'meals as meals_count' => function ($query) use ($userId) {
                     $query->where('user_id', $userId);
@@ -44,7 +48,18 @@ class FoodController extends Controller
             ->selectRaw('(SELECT COUNT(*) FROM favorite_foods WHERE favorite_foods.food_id = foods.id AND favorite_foods.is_favorite = 1 AND favorite_foods.user_id = ?) AS is_favorite', [$userId])
             ->orderByDesc('is_favorite')
             ->orderByDesc('meals_count')
-            ->get();
+            ->orderBy('foods.id')
+            ->toBase()
+            ->get()
+            ->map(fn ($food) => [
+                'id' => (int) $food->id,
+                'display_name' => $food->display_name,
+                'calories' => round((float) $food->calories, 1),
+                'protein' => round((float) $food->protein, 1),
+                'carbs' => round((float) $food->carbs, 1),
+                'fats' => round((float) $food->fats, 1),
+                'is_favorite' => (int) $food->is_favorite,
+            ]);
 
         return response()->json($foods);
     }

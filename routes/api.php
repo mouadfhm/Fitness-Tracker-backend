@@ -40,7 +40,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Food search
     Route::group(['prefix' => 'foods'], function () {
-        Route::get('/search', [FoodController::class, 'index']);
+        // The ETag lets the app's saved list come back as a 304.
+        Route::get('/search', [FoodController::class, 'index'])->middleware('cache.headers:private;etag');
         Route::post('/add', [FoodController::class, 'store']);
         Route::post('/favorite/{id}', [FoodController::class, 'addFavorite']);
         Route::post('/remove-favorite/{id}', [FoodController::class, 'removeFavorite']);
