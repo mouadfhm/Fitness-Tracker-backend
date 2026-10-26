@@ -7,6 +7,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\CorsMiddleware;
 use App\Http\Middleware\SetLocale;
+use App\Http\Middleware\CompressResponse;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -24,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->prepend(CorsMiddleware::class);
         $middleware->append(SetLocale::class);
+        $middleware->append(CompressResponse::class);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
